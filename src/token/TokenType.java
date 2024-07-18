@@ -1,0 +1,23 @@
+package token;
+
+public enum TokenType {
+    // Keywords
+    SET, READ, WRITE, APPEND, FOR, ENDFOR, SPLIT, BY, IF, ENDIF,
+    FROM, TO, AS, DO, CONTAINS, MATCHES, REPLACE, PRINT, JOIN,
+    TRIM, UPPERCASE, LOWERCASE, SUBSTRING, SORT, LENGTH,THEN,
+    IN, EQUALS, ELSE, COMMA, REVERSE,
+
+    // Symbols
+    // PLUS, MINUS, ASTERISK, CARET,
+    OPERATOR,
+    LEFT_PAREN, RIGHT_PAREN,
+    LEFT_BRACKET, RIGHT_BRACKET,
+
+    // Identifiers and literals
+    IDENTIFIER, STRING_LITERAL, NUMBER_LITERAL,
+    REGEX_LITERAL, ARRAY_LITERAL,
+
+    // Newline
+    NEWLINE,
+    EOF // End of file
+}
