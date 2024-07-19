@@ -1,27 +1,27 @@
 package ast;
 
-public class ConditionNode extends AbstractNode {
-    private AbstractNode left;
+public class ConditionNode implements INode {
+    private INode left;
     private String operator;
-    private AbstractNode right;
+    private INode right;
 
     @Override
     public String toString() {
         return "("+left.toString()+operator+right.toString()+")";
     }
 
-    public ConditionNode(AbstractNode left, String operator, AbstractNode right) {
+    public ConditionNode(INode left, String operator, INode right) {
         this.left = left;
         this.operator = operator;
         this.right = right;
     }
-    public AbstractNode getLeft() {
+    public INode getLeft() {
         return left;
     }
     public String getOperator() {
         return operator;
     }
-    public AbstractNode getRight() {
+    public INode getRight() {
         return right;
     }
 }

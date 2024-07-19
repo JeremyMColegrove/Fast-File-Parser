@@ -2,21 +2,21 @@ package ast;
 
 import java.util.List;
 
-public class IteratorNode extends AbstractNode {
+public class IteratorNode implements INode {
     private IdentifierNode variable;
-    private AbstractNode iterator;
-    private List<AbstractNode> body;
+    private INode iterator;
+    private List<INode> body;
 
     @Override
     public String toString() {
         String res = "FOR " + variable.toString() + " IN " + iterator.toString() + " DO [\n";
-        for (AbstractNode node : body) {
+        for (INode node : body) {
             res += node.toString() + "\n";
         }
         return res + "] ENDFOR";
     }
 
-    public IteratorNode(IdentifierNode variable, AbstractNode iterator, List<AbstractNode> body) {
+    public IteratorNode(IdentifierNode variable, INode iterator, List<INode> body) {
         this.variable = variable;
         this.iterator = iterator;
         this.body = body;
@@ -24,10 +24,10 @@ public class IteratorNode extends AbstractNode {
     public IdentifierNode getVariable() {
         return variable;
     }
-    public AbstractNode getIterator() {
+    public INode getIterator() {
         return iterator;
     }
-    public List<AbstractNode> getBody() {
+    public List<INode> getBody() {
         return body;
     }
 }

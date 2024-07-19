@@ -1,11 +1,11 @@
 package ast;
 
-public class SortNode extends AbstractNode {
-    private AbstractNode value;
-    public SortNode(AbstractNode value) {
+public class SortNode implements INode {
+    private INode value;
+    public SortNode(INode value) {
         this.value = value;
     }
-    public AbstractNode getValue() {
+    public INode getValue() {
         return value;
     }
     @Override

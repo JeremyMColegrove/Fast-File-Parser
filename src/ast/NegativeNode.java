@@ -1,12 +1,12 @@
 package ast;
 
-public class NegativeNode extends AbstractNode {
-    private AbstractNode value;
-    public NegativeNode(AbstractNode value) {
+public class NegativeNode implements INode {
+    private INode value;
+    public NegativeNode(INode value) {
         this.value = value;
     }
 
-    public AbstractNode getValue() {
+    public INode getValue() {
         return value;
     }
 

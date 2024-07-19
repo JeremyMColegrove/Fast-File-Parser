@@ -1,12 +1,12 @@
 package ast;
 
-public class TrimNode extends AbstractNode {
-    private AbstractNode value;
-    public TrimNode(AbstractNode value) {
+public class TrimNode implements INode {
+    private INode value;
+    public TrimNode(INode value) {
         this.value = value;
     }
 
-    public AbstractNode getValue() {
+    public INode getValue() {
         return value;
     }
 

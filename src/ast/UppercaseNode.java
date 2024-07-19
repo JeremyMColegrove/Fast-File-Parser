@@ -1,12 +1,12 @@
 package ast;
 
-public class UppercaseNode extends AbstractNode {
-    private AbstractNode value;
-    public UppercaseNode(AbstractNode value) {
+public class UppercaseNode implements INode {
+    private INode value;
+    public UppercaseNode(INode value) {
         this.value = value;
     }
 
-    public AbstractNode getValue() {
+    public INode getValue() {
         return value;
     }
 

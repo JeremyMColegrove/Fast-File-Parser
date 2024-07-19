@@ -2,22 +2,22 @@ package ast;
 
 import java.util.List;
 
-public class ForNode extends AbstractNode {
+public class ForNode implements INode {
     private IdentifierNode variable;
-    private AbstractNode start;
-    private AbstractNode end;
-    private List<AbstractNode> body;
+    private INode start;
+    private INode end;
+    private List<INode> body;
 
     @Override
     public String toString() {
         String res = "FOR " + variable.toString() + " FROM " + start.toString() + " TO " + end.toString() + " DO [\n";
-        for (AbstractNode node : body) {
+        for (INode node : body) {
             res += node.toString() + "\n";
         }
         return res + "] ENDFOR";
     }
 
-    public ForNode(IdentifierNode variable, AbstractNode start, AbstractNode end, List<AbstractNode> body) {
+    public ForNode(IdentifierNode variable, INode start, INode end, List<INode> body) {
         this.variable = variable;
         this.start = start;
         this.end = end;
@@ -26,13 +26,13 @@ public class ForNode extends AbstractNode {
     public IdentifierNode getVariable() {
         return variable;
     }
-    public AbstractNode getStart() {
+    public INode getStart() {
         return start;
     }
-    public AbstractNode getEnd() {
+    public INode getEnd() {
         return end;
     }
-    public List<AbstractNode> getBody() {
+    public List<INode> getBody() {
         return body;
     }
 }

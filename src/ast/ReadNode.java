@@ -1,7 +1,7 @@
 package ast;
 
-public class ReadNode extends AbstractNode {
-    private AbstractNode filename;
+public class ReadNode implements INode {
+    private INode filename;
     private IdentifierNode variable;
 
     @Override
@@ -9,11 +9,11 @@ public class ReadNode extends AbstractNode {
         return "READ " + filename + " INTO " + variable.toString();
     }
 
-    public ReadNode(AbstractNode filename, IdentifierNode variable) {
+    public ReadNode(INode filename, IdentifierNode variable) {
         this.filename = filename;
         this.variable = variable;
     }
-    public AbstractNode getFilename() {
+    public INode getFilename() {
         return filename;
     }
     public IdentifierNode getVariable() {

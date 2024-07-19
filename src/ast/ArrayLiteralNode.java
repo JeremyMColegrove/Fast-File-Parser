@@ -3,12 +3,12 @@ package ast;
 import java.util.List;
 
 public class ArrayLiteralNode extends LiteralNode {
-    private List<AbstractNode> array;
-    public ArrayLiteralNode(List<AbstractNode> array) {
+    private List<INode> array;
+    public ArrayLiteralNode(List<INode> array) {
         super();
         this.array = array;
     }
-    public List<AbstractNode> getArray() {
+    public List<INode> getArray() {
         return array;
     }
     @Override

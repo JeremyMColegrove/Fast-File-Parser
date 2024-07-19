@@ -1,8 +1,8 @@
 package ast;
 
-public class SetNode extends AbstractNode {
+public class SetNode implements INode {
     private IdentifierNode variable;
-    private AbstractNode value;
+    private INode value;
 
     @Override
     public String toString() {
@@ -12,10 +12,10 @@ public class SetNode extends AbstractNode {
     public IdentifierNode getVariable() {
         return variable;
     }
-    public AbstractNode getValue() {
+    public INode getValue() {
         return value;
     }
-    public SetNode(IdentifierNode variable, AbstractNode value) {
+    public SetNode(IdentifierNode variable, INode value) {
         this.variable = variable;
         this.value = value;
     }

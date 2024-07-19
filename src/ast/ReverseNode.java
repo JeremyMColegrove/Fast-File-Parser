@@ -1,11 +1,11 @@
 package ast;
 
-public class ReverseNode extends AbstractNode {
-    private AbstractNode value;
-    public ReverseNode(AbstractNode value) {
+public class ReverseNode implements INode {
+    private INode value;
+    public ReverseNode(INode value) {
         this.value = value;
     }
-    public AbstractNode getValue() {
+    public INode getValue() {
         return value;
     }
     @Override

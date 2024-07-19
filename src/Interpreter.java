@@ -11,7 +11,7 @@ public class Interpreter {
 
     public void execute(ProgramNode program) {
         // open the files before reading or writing to them
-        for (AbstractNode statement : program.getStatements()) {
+        for (INode statement : program.getStatements()) {
             executeStatement(statement);
         }
         try {
@@ -23,7 +23,7 @@ public class Interpreter {
 
     }
 
-    private void executeStatement(AbstractNode statement) {
+    private void executeStatement(INode statement) {
         if (statement instanceof SetNode) {
             executeSetStatement((SetNode) statement);
         } else if (statement instanceof ReadNode) {
@@ -127,8 +127,8 @@ public class Interpreter {
         // iterate over it
         for (Iterator it = iterator; it.hasNext(); ) {
             Object item = it.next();
-            symbolTable.put(statement.getVariable().getName(), evaluateExpression((AbstractNode) item));
-            for (AbstractNode bodyStatement : statement.getBody()) {
+            symbolTable.put(statement.getVariable().getName(), item);
+            for (INode bodyStatement : statement.getBody()) {
                 executeStatement(bodyStatement);
             }
         }
@@ -139,7 +139,7 @@ public class Interpreter {
         int end = (int) evaluateExpression(statement.getEnd());
         for (int i = start; i < end; i++) {
             symbolTable.put(statement.getVariable().getName(), i);
-            for (AbstractNode bodyStatement : statement.getBody()) {
+            for (INode bodyStatement : statement.getBody()) {
                 executeStatement(bodyStatement);
             }
         }
@@ -148,42 +148,43 @@ public class Interpreter {
     private void executeIfStatement(IfNode statement) {
         boolean condition = (boolean) evaluateExpression(statement.getCondition());
         if (condition) {
-            for (AbstractNode thenStatement : statement.getThenBody()) {
+            for (INode thenStatement : statement.getThenBody()) {
                 executeStatement(thenStatement);
             }
         } else {
-            for (AbstractNode elseStatement : statement.getElseBody()) {
+            for (INode elseStatement : statement.getElseBody()) {
                 executeStatement(elseStatement);
             }
         }
     }
 
-    private Object evaluateExpression(AbstractNode expression) {
+    private Object evaluateExpression(INode expression) {
         if (expression instanceof IdentifierNode) {
             String variableName = ((IdentifierNode) expression).getName();
             if (!symbolTable.containsKey(variableName)) {
                 throw new RuntimeException("Undeclared variable: " + variableName);
             }
-            Object obj = symbolTable.get(variableName);
+            return symbolTable.get(variableName);
+        } else if (expression instanceof IndexNode) {
+            Object value = evaluateExpression(((IndexNode) expression).getValue());
+            Object index = evaluateExpression(((IndexNode) expression).getIndex());
+            // check if we can access it
+            if (index instanceof Integer) {
+                Integer i = (Integer) index;
+                try {
 
-            if (((IdentifierNode) expression).getAccessor() != null) {
-                Object index = evaluateExpression(((IdentifierNode) expression).getAccessor());
-                if (!(index instanceof Integer)) {
-                    throw new RuntimeException("Can not use type " + index.getClass() + " as index.");
-                }
-                if (obj instanceof ArrayList<?>) {
-                    Object item = ((ArrayList<?>) obj).get((Integer)index);
-                    if (item instanceof AbstractNode) {
-                        return evaluateExpression((AbstractNode) item);
-                    } else {
-                        return item;
+                    if (value instanceof ArrayList<?>) {
+                        return ((ArrayList<?>) value).get(i);
+                    } else if (value instanceof String) {
+                        return String.valueOf(((String) value).toCharArray()[i]);
                     }
-                } else if (obj instanceof String) {
-                    return String.valueOf(((String) obj).charAt((Integer)index));
+                } catch (IndexOutOfBoundsException e) {
+                    throw new RuntimeException("Index "+i+" out of bounds");
+                } catch (Exception e){
+                    throw new RuntimeException(e.getLocalizedMessage());
                 }
-                throw new RuntimeException("Can not access index of type " + obj.getClass());
             }
-            return obj;
+            throw new RuntimeException("Can not index " + value.toString() + " at position ");
         } else if (expression instanceof AsNode) {
             AsNode as = (AsNode) expression;
             Object value = evaluateExpression(as.getValue());
@@ -271,7 +272,7 @@ public class Interpreter {
             return ((RegexLiteralNode) expression).getRegex();
         } else if (expression instanceof ArrayLiteralNode) {
             ArrayList values = new ArrayList();
-            for (AbstractNode node: ((ArrayList<AbstractNode>)((ArrayLiteralNode) expression).getArray())) {
+            for (INode node: ((ArrayList<INode>)((ArrayLiteralNode) expression).getArray())) {
                 values.add(evaluateExpression(node));
             }
             return values;
@@ -301,9 +302,9 @@ public class Interpreter {
                     @Override
                     public int compare(Object o1, Object o2) {
                         // create and execute new compare node
-                        ConditionNode greater = new ConditionNode((AbstractNode) o1, ">", (AbstractNode) o2);
+                        ConditionNode greater = new ConditionNode((INode) o1, ">", (INode) o2);
                         Boolean greater_result = (Boolean) evaluateExpression(greater);
-                        ConditionNode equals = new ConditionNode((AbstractNode) o1, "EQUALS", (AbstractNode) o2);
+                        ConditionNode equals = new ConditionNode((INode) o1, "EQUALS", (INode) o2);
                         Boolean equals_result = (Boolean) evaluateExpression(equals);
                         if (greater_result) {
                             return 1;

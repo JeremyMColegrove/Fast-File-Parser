@@ -2,22 +2,22 @@ package ast;
 
 import java.util.List;
 
-public class ProgramNode extends AbstractNode {
-    private List<AbstractNode> statements;
+public class ProgramNode implements INode {
+    private List<INode> statements;
 
     @Override
     public String toString() {
         String res = "";
-        for (AbstractNode node : statements) {
+        for (INode node : statements) {
             res += node.toString() + "\n";
         }
         return res;
     }
 
-    public ProgramNode(List<AbstractNode> statements) {
+    public ProgramNode(List<INode> statements) {
         this.statements = statements;
     }
-    public List<AbstractNode> getStatements() {
+    public List<INode> getStatements() {
         return statements;
     }
 }

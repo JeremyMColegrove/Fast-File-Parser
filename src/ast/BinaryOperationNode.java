@@ -1,22 +1,22 @@
 package ast;
 
-public class BinaryOperationNode extends AbstractNode {
-    private AbstractNode left;
+public class BinaryOperationNode implements INode {
+    private INode left;
     private String operator;
-    private AbstractNode right;
+    private INode right;
 
     @Override
     public String toString() {
         return "("+left.toString() + operator + right.toString()+")";
     }
 
-    public BinaryOperationNode(AbstractNode left, String operator, AbstractNode right) {
+    public BinaryOperationNode(INode left, String operator, INode right) {
         this.left = left;
         this.operator = operator;
         this.right = right;
     }
 
-    public AbstractNode getLeft() {
+    public INode getLeft() {
         return left;
     }
 
@@ -24,7 +24,7 @@ public class BinaryOperationNode extends AbstractNode {
         return operator;
     }
 
-    public AbstractNode getRight() {
+    public INode getRight() {
         return right;
     }
 

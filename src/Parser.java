@@ -1,5 +1,5 @@
 import ast.*;
-import ast.AbstractNode;
+import ast.INode;
 import ast.ConditionNode;
 import ast.IfNode;
 import ast.LengthNode;
@@ -24,7 +24,7 @@ public class Parser {
     }
 
     public ProgramNode parse() {
-        List<AbstractNode> statements = new ArrayList<>();
+        List<INode> statements = new ArrayList<>();
         // remove begining newlines
         while (!isAtEnd() && match(TokenType.NEWLINE));
         while (!isAtEnd()) {
@@ -42,7 +42,7 @@ public class Parser {
         return program;
     }
 
-    private AbstractNode parseStatement() {
+    private INode parseStatement() {
         Token token = peek();
         switch (token.getType()) {
             case READ:
@@ -67,54 +67,54 @@ public class Parser {
         }
     }
 
-    private AbstractNode parsePrint() {
+    private INode parsePrint() {
         consume(TokenType.PRINT);
-        AbstractNode value = parseExpression();
+        INode value = parseExpression();
         return new PrintNode(value);
     }
 
-    private AbstractNode parseSet() {
+    private INode parseSet() {
         consume(TokenType.SET);
         IdentifierNode variable = parseIdentifier();
         consume(TokenType.TO);
-        AbstractNode value = parseExpression();
+        INode value = parseExpression();
         return new SetNode(variable, value);
     }
 
-    private AbstractNode parseRead() {
+    private INode parseRead() {
         consume(TokenType.READ);
-        AbstractNode filename = parseExpression();
+        INode filename = parseExpression();
         consume(TokenType.TO);
         IdentifierNode variable = parseIdentifier();
         return new ReadNode(filename, variable);
     }
 
-    private AbstractNode parseWrite() {
+    private INode parseWrite() {
         consume(TokenType.WRITE);
-        AbstractNode content = parseExpression();
+        INode content = parseExpression();
         consume(TokenType.TO);
-        AbstractNode filename = parseExpression();
+        INode filename = parseExpression();
         return new WriteNode(content, filename);
     }
 
-    private AbstractNode parseAppend() {
+    private INode parseAppend() {
         consume(TokenType.APPEND);
-        AbstractNode content = parseExpression();
+        INode content = parseExpression();
         consume(TokenType.TO);
-        AbstractNode filename = parseExpression();
+        INode filename = parseExpression();
         return new AppendNode(content, filename);
     }
 
-    private AbstractNode parseFor() {
+    private INode parseFor() {
         consume(TokenType.FOR);
         IdentifierNode variable = parseIdentifier();
         // check if is iterator or for
         if (check(TokenType.IN)) {
             consume(TokenType.IN);
-            AbstractNode iterator = parseExpression();
+            INode iterator = parseExpression();
             consume(TokenType.DO);
             expectAndConsumeNewLines();
-            List<AbstractNode> body = new ArrayList<>();
+            List<INode> body = new ArrayList<>();
             while (!check(TokenType.ENDFOR)) {
                 body.add(parseStatement());
                 expectAndConsumeNewLines();
@@ -123,12 +123,12 @@ public class Parser {
             return new IteratorNode(variable, iterator, body);
         }
         consume(TokenType.FROM);
-        AbstractNode start = parseExpression();
+        INode start = parseExpression();
         consume(TokenType.TO);
-        AbstractNode end = parseExpression();
+        INode end = parseExpression();
         consume(TokenType.DO);
         expectAndConsumeNewLines();
-        List<AbstractNode> body = new ArrayList<>();
+        List<INode> body = new ArrayList<>();
         while (!check(TokenType.ENDFOR)) {
             body.add(parseStatement());
             expectAndConsumeNewLines();
@@ -138,13 +138,13 @@ public class Parser {
     }
 
 
-    private AbstractNode parseIf() {
+    private INode parseIf() {
         consume(TokenType.IF);
-        AbstractNode condition = parseCondition();
+        INode condition = parseCondition();
         consume(TokenType.THEN);
         expectAndConsumeNewLines();
-        List<AbstractNode> thenBody = new ArrayList<>();
-        List<AbstractNode> elsebody = new ArrayList<>();
+        List<INode> thenBody = new ArrayList<>();
+        List<INode> elsebody = new ArrayList<>();
         // parse THEN body
         while (!check(TokenType.ENDIF) && !check(TokenType.ELSE)) {
             thenBody.add(parseStatement());
@@ -162,19 +162,19 @@ public class Parser {
         return new IfNode(condition, thenBody, elsebody);
     }
 
-    private AbstractNode parseSplit() {
+    private INode parseSplit() {
         consume(TokenType.SPLIT);
-        AbstractNode variable = parseExpression();
+        INode variable = parseExpression();
         consume(TokenType.BY);
-        AbstractNode delimiter = parseExpression();
+        INode delimiter = parseExpression();
         consume(TokenType.TO);
         IdentifierNode target = parseIdentifier();
         return new SplitNode(variable, delimiter, target);
     }
 
-    private AbstractNode parseCondition() {
-        AbstractNode right;
-        AbstractNode left = parseExpression();
+    private INode parseCondition() {
+        INode right;
+        INode left = parseExpression();
         TokenType operator = peek().getType();
         switch (operator) {
             case OPERATOR:
@@ -194,48 +194,56 @@ public class Parser {
         }
     }
 
-    private AbstractNode parseExpression() {
-        AbstractNode expression = parseAdditionSubtraction();
+    private INode parseExpression() {
+        INode expression = parseAdditionSubtraction();
         // check if cast
-        if (match(TokenType.AS)) {
+        while (match(TokenType.AS)) {
             // get type
             if (match(TokenType.NUMBER)) {
-                return new AsNode(expression, TokenType.NUMBER);
+                expression = new  AsNode(expression, TokenType.NUMBER);
             } else if (match(TokenType.STRING)) {
-                return new AsNode(expression, TokenType.STRING);
+                expression = new AsNode(expression, TokenType.STRING);
             } else if (match(TokenType.ARRAY)) {
-                return new AsNode(expression, TokenType.ARRAY);
+                expression = new AsNode(expression, TokenType.ARRAY);
+            } else {
+                throw new RuntimeException("Cannot cast to " + peek().getType());
             }
-            throw new RuntimeException("Cannt cast to " + peek().getType());
+        }
+        // match any array accessor
+        while (match(TokenType.LEFT_BRACKET)) {
+            // get type
+            INode index = parseExpression();
+            consume(TokenType.RIGHT_BRACKET);
+            expression = new IndexNode(expression, index);
         }
         return expression;
     }
 
-    private AbstractNode parseAdditionSubtraction() {
-        AbstractNode left = parseMultiplicationDivision();
+    private INode parseAdditionSubtraction() {
+        INode left = parseMultiplicationDivision();
 
         while (matchOperator("+", "-")) {
             String operator = previous().getValue();
-            AbstractNode right = parseMultiplicationDivision();
+            INode right = parseMultiplicationDivision();
             left = new BinaryOperationNode(left, operator, right);
         }
 
         return left;
     }
 
-    private AbstractNode parseMultiplicationDivision() {
-        AbstractNode left = parsePrimary();
+    private INode parseMultiplicationDivision() {
+        INode left = parsePrimary();
 
         while (matchOperator("*", "/")) {
             String operator = previous().getValue();
-            AbstractNode right = parsePrimary();
+            INode right = parsePrimary();
             left = new BinaryOperationNode(left, operator, right);
         }
 
         return left;
     }
 
-    private AbstractNode parsePrimary() {
+    private INode parsePrimary() {
         Token token = peek();
         switch (token.getType()) {
             case NUMBER_LITERAL:
@@ -277,13 +285,13 @@ public class Parser {
 
     private NegativeNode parseNegative() {
         consume(TokenType.OPERATOR);
-        AbstractNode value = parseExpression();
+        INode value = parseExpression();
         return new NegativeNode(value);
     }
 
-    private AbstractNode parseGrouping() {
+    private INode parseGrouping() {
         consume(TokenType.LEFT_PAREN); // Consume '('
-        AbstractNode expression = parseExpression();
+        INode expression = parseExpression();
         if (!match(TokenType.RIGHT_PAREN)) {
             throw new RuntimeException("Expected ')' after expression");
         }
@@ -293,47 +301,47 @@ public class Parser {
     private SubstringNode parseSubstringExpression() {
         consume(TokenType.SUBSTRING);
         // get variable
-        AbstractNode variable = parseExpression();
+        INode variable = parseExpression();
         consume(TokenType.FROM);
-        AbstractNode from = parseExpression();
+        INode from = parseExpression();
         consume(TokenType.TO);
-        AbstractNode to = parseExpression();
+        INode to = parseExpression();
         return new SubstringNode(variable, from, to);
     }
 
     private SortNode parseSortExpression() {
         consume(TokenType.SORT);
-        AbstractNode value = parseExpression();
+        INode value = parseExpression();
         return new SortNode(value);
     }
 
     private ReverseNode parseReverseExpression() {
         consume(TokenType.REVERSE);
-        AbstractNode value = parseExpression();
+        INode value = parseExpression();
         return new ReverseNode(value);
     }
 
     private UppercaseNode parseUppercaseExpression() {
         consume(TokenType.UPPERCASE);
-        AbstractNode right = parseExpression();
+        INode right = parseExpression();
         return new UppercaseNode(right);
     }
 
     private LowercaseNode parseLowercaseExpression() {
         consume(TokenType.LOWERCASE);
-        AbstractNode right = parseExpression();
+        INode right = parseExpression();
         return new LowercaseNode(right);
     }
 
     private TrimNode parseTrimExpression() {
         consume(TokenType.TRIM);
-        AbstractNode value = parseExpression();
+        INode value = parseExpression();
         return new TrimNode(value);
     }
 
     private ArrayLiteralNode parseArrayLiteral() {
         consume(TokenType.LEFT_BRACKET);
-        List<AbstractNode> array = new ArrayList<>();
+        List<INode> array = new ArrayList<>();
 
         // get first element in array
         if (!check(TokenType.RIGHT_BRACKET)) {
@@ -352,12 +360,6 @@ public class Parser {
     private IdentifierNode parseIdentifier() {
         String variable = consume(TokenType.IDENTIFIER).getValue();
         // check if there is an accessor in here
-        if (match(TokenType.LEFT_BRACKET)) {
-            // get the accessor
-            AbstractNode accessor = parseExpression();
-            consume(TokenType.RIGHT_BRACKET);
-            return new IdentifierNode(variable, accessor);
-        }
         return new IdentifierNode(variable);
     }
 
@@ -381,9 +383,9 @@ public class Parser {
         return new StringLiteralNode(token.getValue());
     }
 
-    private AbstractNode parseLengthExpression() {
+    private INode parseLengthExpression() {
         consume(TokenType.LENGTH);
-        AbstractNode node = parsePrimary();
+        INode node = parsePrimary();
         return new LengthNode(node);
     }
 

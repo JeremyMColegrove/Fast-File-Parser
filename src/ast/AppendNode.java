@@ -1,22 +1,22 @@
 package ast;
 
-public class AppendNode extends AbstractNode {
-    private AbstractNode content;
-    private AbstractNode filename;
+public class AppendNode implements INode {
+    private INode content;
+    private INode filename;
 
     @Override
     public String toString() {
         return "APPEND " + content.toString() + " TO " + filename;
     }
 
-    public AppendNode(AbstractNode content, AbstractNode filename) {
+    public AppendNode(INode content, INode filename) {
         this.content = content;
         this.filename = filename;
     }
-    public AbstractNode getContent() {
+    public INode getContent() {
         return content;
     }
-    public AbstractNode getFilename() {
+    public INode getFilename() {
         return filename;
     }
 }

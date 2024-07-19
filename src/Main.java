@@ -20,9 +20,9 @@ public class Main {
         String code = Files.readString(Path.of(path), StandardCharsets.UTF_8);
         Lexer lexer = new Lexer(code);
         ArrayList<Token> tokens = new ArrayList(lexer.tokenize());
-        for (Token token: tokens) {
-            System.out.println(token.getType() + " : " + token.getValue());
-        }
+//        for (Token token: tokens) {
+//            System.out.println(token.getType() + " : " + token.getValue());
+//        }
 //        Pattern pattern = Pattern.compile("^\\d{2}\\/\\d{2}");
 //        if (pattern.matcher("02/12").find()) {
 //            System.out.println("IT HAS A MATCH");

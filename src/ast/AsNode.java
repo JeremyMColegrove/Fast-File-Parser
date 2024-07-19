@@ -3,10 +3,10 @@ package ast;
 
 import token.TokenType;
 
-public class AsNode extends AbstractNode {
+public class AsNode implements INode {
     private TokenType cast;
-    private AbstractNode value;
-    public AsNode(AbstractNode value, TokenType cast) {
+    private INode value;
+    public AsNode(INode value, TokenType cast) {
         this.value = value;
         this.cast = cast;
     }
@@ -15,7 +15,7 @@ public class AsNode extends AbstractNode {
         return this.cast;
     }
 
-    public AbstractNode getValue() {
+    public INode getValue() {
         return this.value;
     }
     @Override
