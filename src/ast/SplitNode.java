@@ -1,8 +1,8 @@
 package ast;
 
-public class SplitNode extends ASTNode {
-    private ASTNode variable;
-    private ASTNode delimiter;
+public class SplitNode extends AbstractNode {
+    private AbstractNode variable;
+    private AbstractNode delimiter;
     private IdentifierNode target;
 
     @Override
@@ -10,15 +10,15 @@ public class SplitNode extends ASTNode {
         return "SPLIT " + variable.toString() + " BY " + delimiter.toString() + " INTO " + target.toString();
     }
 
-    public SplitNode(ASTNode variable, ASTNode delimiter, IdentifierNode target) {
+    public SplitNode(AbstractNode variable, AbstractNode delimiter, IdentifierNode target) {
         this.variable = variable;
         this.delimiter = delimiter;
         this.target = target;
     }
-    public ASTNode getVariable() {
+    public AbstractNode getVariable() {
         return variable;
     }
-    public ASTNode getDelimiter() {
+    public AbstractNode getDelimiter() {
         return delimiter;
     }
     public IdentifierNode getTarget() {

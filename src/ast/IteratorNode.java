@@ -2,21 +2,21 @@ package ast;
 
 import java.util.List;
 
-public class IteratorNode extends ASTNode {
+public class IteratorNode extends AbstractNode {
     private IdentifierNode variable;
-    private ASTNode iterator;
-    private List<ASTNode> body;
+    private AbstractNode iterator;
+    private List<AbstractNode> body;
 
     @Override
     public String toString() {
         String res = "FOR " + variable.toString() + " IN " + iterator.toString() + " DO [\n";
-        for (ASTNode node : body) {
+        for (AbstractNode node : body) {
             res += node.toString() + "\n";
         }
         return res + "] ENDFOR";
     }
 
-    public IteratorNode(IdentifierNode variable, ASTNode iterator, List<ASTNode> body) {
+    public IteratorNode(IdentifierNode variable, AbstractNode iterator, List<AbstractNode> body) {
         this.variable = variable;
         this.iterator = iterator;
         this.body = body;
@@ -24,10 +24,10 @@ public class IteratorNode extends ASTNode {
     public IdentifierNode getVariable() {
         return variable;
     }
-    public ASTNode getIterator() {
+    public AbstractNode getIterator() {
         return iterator;
     }
-    public List<ASTNode> getBody() {
+    public List<AbstractNode> getBody() {
         return body;
     }
 }

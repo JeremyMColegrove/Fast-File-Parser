@@ -1,11 +1,11 @@
 package ast;
 
-public class MatchesNode extends ASTNode {
-    private ASTNode left;
+public class MatchesNode extends AbstractNode {
+    private AbstractNode left;
     private RegexLiteralNode regex;
-    public ASTNode getLeft() { return left; }
+    public AbstractNode getLeft() { return left; }
     public RegexLiteralNode getRegex() { return regex; }
-    public MatchesNode(ASTNode left, RegexLiteralNode regex) {
+    public MatchesNode(AbstractNode left, RegexLiteralNode regex) {
      this.left = left;
      this.regex = regex;
     }

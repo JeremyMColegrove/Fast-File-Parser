@@ -1,15 +1,14 @@
 package ast;
 
 import java.util.List;
-import java.util.Objects;
 
 public class ArrayLiteralNode extends LiteralNode {
-    private List<ASTNode> array;
-    public ArrayLiteralNode(List<ASTNode> array) {
+    private List<AbstractNode> array;
+    public ArrayLiteralNode(List<AbstractNode> array) {
         super();
         this.array = array;
     }
-    public List<ASTNode> getArray() {
+    public List<AbstractNode> getArray() {
         return array;
     }
     @Override

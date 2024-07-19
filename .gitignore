@@ -1,1 +1,6 @@
 /out/**/*
+.idea
+*.iml
+*.dp
+src/logs.txt
+src/output.txt

@@ -1,17 +1,17 @@
 package ast;
 
-public class PrintNode extends ASTNode {
-    private ASTNode variable;
+public class PrintNode extends AbstractNode {
+    private AbstractNode variable;
 
     @Override
     public String toString() {
         return "(PRINT " + variable.toString()+")";
     }
 
-    public PrintNode(ASTNode variable) {
+    public PrintNode(AbstractNode variable) {
         this.variable = variable;
     }
-    public ASTNode getVariable() {
+    public AbstractNode getVariable() {
         return variable;
     }
 }

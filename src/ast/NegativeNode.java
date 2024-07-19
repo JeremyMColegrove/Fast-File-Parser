@@ -1,8 +1,8 @@
 package ast;
 
-public class TrimNode extends AbstractNode {
+public class NegativeNode extends AbstractNode {
     private AbstractNode value;
-    public TrimNode(AbstractNode value) {
+    public NegativeNode(AbstractNode value) {
         this.value = value;
     }
 
@@ -12,6 +12,6 @@ public class TrimNode extends AbstractNode {
 
     @Override
     public String toString() {
-        return "(TRIM " + value.toString() + ")";
+        return "(-"+value.toString()+")";
     }
 }

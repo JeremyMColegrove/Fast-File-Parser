@@ -1,13 +1,11 @@
 package ast;
 
-import java.util.List;
-
-public class SortNode extends ASTNode {
-    private ASTNode value;
-    public SortNode(ASTNode value) {
+public class SortNode extends AbstractNode {
+    private AbstractNode value;
+    public SortNode(AbstractNode value) {
         this.value = value;
     }
-    public ASTNode getValue() {
+    public AbstractNode getValue() {
         return value;
     }
     @Override

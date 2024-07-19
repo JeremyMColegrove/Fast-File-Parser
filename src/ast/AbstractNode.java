@@ -1,5 +1,5 @@
 package ast;
 
-abstract public class ASTNode {
+abstract public class AbstractNode {
     abstract public String toString();
 }

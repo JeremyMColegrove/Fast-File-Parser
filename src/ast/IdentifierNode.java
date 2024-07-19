@@ -1,13 +1,13 @@
 package ast;
 
-public class IdentifierNode extends ASTNode {
+public class IdentifierNode extends AbstractNode {
     private String variable;
-    private ASTNode accessor = null;
+    private AbstractNode accessor = null;
 
     public String getName() {
         return variable;
     }
-    public ASTNode getAccessor() { return accessor; }
+    public AbstractNode getAccessor() { return accessor; }
 
     @Override
     public String toString() {
@@ -22,7 +22,7 @@ public class IdentifierNode extends ASTNode {
     public IdentifierNode(String variable) {
         this.variable = variable;
     }
-    public IdentifierNode(String variable, ASTNode accessor) {
+    public IdentifierNode(String variable, AbstractNode accessor) {
         this.variable = variable;
         this.accessor = accessor;
     }

@@ -2,22 +2,22 @@ package ast;
 
 import java.util.List;
 
-public class ForNode extends ASTNode {
+public class ForNode extends AbstractNode {
     private IdentifierNode variable;
-    private ASTNode start;
-    private ASTNode end;
-    private List<ASTNode> body;
+    private AbstractNode start;
+    private AbstractNode end;
+    private List<AbstractNode> body;
 
     @Override
     public String toString() {
         String res = "FOR " + variable.toString() + " FROM " + start.toString() + " TO " + end.toString() + " DO [\n";
-        for (ASTNode node : body) {
+        for (AbstractNode node : body) {
             res += node.toString() + "\n";
         }
         return res + "] ENDFOR";
     }
 
-    public ForNode(IdentifierNode variable, ASTNode start, ASTNode end, List<ASTNode> body) {
+    public ForNode(IdentifierNode variable, AbstractNode start, AbstractNode end, List<AbstractNode> body) {
         this.variable = variable;
         this.start = start;
         this.end = end;
@@ -26,13 +26,13 @@ public class ForNode extends ASTNode {
     public IdentifierNode getVariable() {
         return variable;
     }
-    public ASTNode getStart() {
+    public AbstractNode getStart() {
         return start;
     }
-    public ASTNode getEnd() {
+    public AbstractNode getEnd() {
         return end;
     }
-    public List<ASTNode> getBody() {
+    public List<AbstractNode> getBody() {
         return body;
     }
 }

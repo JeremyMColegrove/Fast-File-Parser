@@ -1,17 +1,17 @@
 package ast;
 
-public class LengthNode extends ASTNode {
-    private ASTNode variable;
+public class LengthNode extends AbstractNode {
+    private AbstractNode variable;
 
     @Override
     public String toString() {
         return "(LENGTH " + variable.toString()+")";
     }
 
-    public LengthNode(ASTNode variable) {
+    public LengthNode(AbstractNode variable) {
         this.variable = variable;
     }
-    public ASTNode getVariable() {
+    public AbstractNode getVariable() {
         return variable;
     }
 }

@@ -2,36 +2,36 @@ package ast;
 
 import java.util.List;
 
-public class IfNode extends ASTNode {
-    private ASTNode condition;
-    private List<ASTNode> thenBody;
-    private List<ASTNode> elseBody;
+public class IfNode extends AbstractNode {
+    private AbstractNode condition;
+    private List<AbstractNode> thenBody;
+    private List<AbstractNode> elseBody;
 
     @Override
     public String toString() {
         String res = "IF " + condition.toString() + " THEN [\n";
-        for (ASTNode node : thenBody) {
+        for (AbstractNode node : thenBody) {
             res += node.toString() + "\n";
         }
         res += "] ELSE [\n";
-        for (ASTNode node : elseBody) {
+        for (AbstractNode node : elseBody) {
             res += node.toString() + "\n";
         }
         return res + "] ENDIF";
     }
 
-    public IfNode(ASTNode condition, List<ASTNode> thenBody, List<ASTNode> elseBody) {
+    public IfNode(AbstractNode condition, List<AbstractNode> thenBody, List<AbstractNode> elseBody) {
         this.condition = condition;
         this.thenBody = thenBody;
         this.elseBody = elseBody;
     }
-    public List<ASTNode> getElseBody() {
+    public List<AbstractNode> getElseBody() {
         return elseBody;
     }
-    public List<ASTNode> getThenBody() {
+    public List<AbstractNode> getThenBody() {
         return thenBody;
     }
-    public ASTNode getCondition() {
+    public AbstractNode getCondition() {
         return condition;
     }
 }

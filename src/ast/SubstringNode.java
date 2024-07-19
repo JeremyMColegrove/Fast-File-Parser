@@ -1,30 +1,28 @@
 package ast;
 
-import java.util.List;
-
-public class SubstringNode extends ASTNode {
-    private ASTNode variable;
-    private ASTNode start;
-    private ASTNode end;
+public class SubstringNode extends AbstractNode {
+    private AbstractNode variable;
+    private AbstractNode start;
+    private AbstractNode end;
 
     @Override
     public String toString() {
         return "(SUBSTRING " + variable.toString() + " FROM " + start.toString() + " TO " + end.toString() + ")";
     }
 
-    public SubstringNode(ASTNode variable, ASTNode start, ASTNode end) {
+    public SubstringNode(AbstractNode variable, AbstractNode start, AbstractNode end) {
         this.variable = variable;
         this.start = start;
         this.end = end;
     }
 
-    public ASTNode getVariable() {
+    public AbstractNode getVariable() {
         return variable;
     }
-    public ASTNode getStart() {
+    public AbstractNode getStart() {
         return start;
     }
-    public ASTNode getEnd() {
+    public AbstractNode getEnd() {
         return end;
     }
 }

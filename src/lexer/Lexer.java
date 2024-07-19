@@ -31,6 +31,11 @@ public class Lexer {
                 continue;
             }
 
+            // handle comments
+            if (currentChar == '#') {
+                stripComment();
+                continue;
+            }
             // Handle keywords and identifiers
             if (Character.isLetter(currentChar)) {
                 tokenizeKeywordOrIdentifier();
@@ -50,7 +55,11 @@ public class Lexer {
             }
 
             // Handle regex literals
-            if (currentChar == '/' && code.charAt(position+1) != 'n') {
+            if (currentChar == '/'
+                    && code.charAt(position+1) != 'n'
+                    && tokens.get(tokens.size()-1).getType()!=TokenType.NUMBER_LITERAL
+                    && tokens.get(tokens.size()-1).getType()!=TokenType.RIGHT_PAREN
+                    && tokens.get(tokens.size()-1).getType()!=TokenType.RIGHT_BRACKET )  {
                 tokenizeRegexLiteral();
                 continue;
             }
@@ -95,6 +104,8 @@ public class Lexer {
 
         return tokens;
     }
+
+
     // Helper method to add tokens
     private void addToken(TokenType type) {
         tokens.add(new Token(type, ""));
@@ -197,6 +208,15 @@ public class Lexer {
             case "AS":
                 addToken(TokenType.AS);
                 break;
+            case "NUMBER":
+                addToken(TokenType.NUMBER);
+                break;
+            case "STRING":
+                addToken(TokenType.STRING);
+                break;
+            case "ARRAY":
+                addToken(TokenType.ARRAY);
+                break;
             case "DO":
                 addToken(TokenType.DO);
                 break;
@@ -256,6 +276,15 @@ public class Lexer {
         }
 
         addToken(TokenType.NUMBER_LITERAL, lexeme.toString());
+    }
+    // Method to strip comments
+    private void stripComment() {
+        //Skip #
+        position++;
+        while (position < code.length() && code.charAt(position) != '\n') {
+            position++;
+        }
+        position++;
     }
 
     // Method to tokenize string literals

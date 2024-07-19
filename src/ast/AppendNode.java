@@ -1,22 +1,22 @@
 package ast;
 
-public class AppendNode extends ASTNode {
-    private ASTNode content;
-    private ASTNode filename;
+public class AppendNode extends AbstractNode {
+    private AbstractNode content;
+    private AbstractNode filename;
 
     @Override
     public String toString() {
         return "APPEND " + content.toString() + " TO " + filename;
     }
 
-    public AppendNode(ASTNode content, ASTNode filename) {
+    public AppendNode(AbstractNode content, AbstractNode filename) {
         this.content = content;
         this.filename = filename;
     }
-    public ASTNode getContent() {
+    public AbstractNode getContent() {
         return content;
     }
-    public ASTNode getFilename() {
+    public AbstractNode getFilename() {
         return filename;
     }
 }

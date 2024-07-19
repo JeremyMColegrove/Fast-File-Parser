@@ -11,7 +11,7 @@ public class Interpreter {
 
     public void execute(ProgramNode program) {
         // open the files before reading or writing to them
-        for (ASTNode statement : program.getStatements()) {
+        for (AbstractNode statement : program.getStatements()) {
             executeStatement(statement);
         }
         try {
@@ -23,7 +23,7 @@ public class Interpreter {
 
     }
 
-    private void executeStatement(ASTNode statement) {
+    private void executeStatement(AbstractNode statement) {
         if (statement instanceof SetNode) {
             executeSetStatement((SetNode) statement);
         } else if (statement instanceof ReadNode) {
@@ -81,16 +81,7 @@ public class Interpreter {
 
     private void executePrintStatement(PrintNode statement) {
         Object value = evaluateExpression(statement.getVariable());
-        if (value instanceof ArrayList) {
-            // evaluate each of the elements
-            ArrayList values = new ArrayList();
-            for (ASTNode node: ((ArrayList<ASTNode>)value)) {
-                values.add(evaluateExpression(node));
-            }
-            System.out.printf(values.toString());
-        } else {
-            System.out.printf(value.toString());
-        }
+        System.out.println(value);
     }
 
     private void executeWriteStatement(WriteNode statement) {
@@ -136,8 +127,8 @@ public class Interpreter {
         // iterate over it
         for (Iterator it = iterator; it.hasNext(); ) {
             Object item = it.next();
-            symbolTable.put(statement.getVariable().getName(), evaluateExpression((ASTNode) item));
-            for (ASTNode bodyStatement : statement.getBody()) {
+            symbolTable.put(statement.getVariable().getName(), evaluateExpression((AbstractNode) item));
+            for (AbstractNode bodyStatement : statement.getBody()) {
                 executeStatement(bodyStatement);
             }
         }
@@ -148,7 +139,7 @@ public class Interpreter {
         int end = (int) evaluateExpression(statement.getEnd());
         for (int i = start; i < end; i++) {
             symbolTable.put(statement.getVariable().getName(), i);
-            for (ASTNode bodyStatement : statement.getBody()) {
+            for (AbstractNode bodyStatement : statement.getBody()) {
                 executeStatement(bodyStatement);
             }
         }
@@ -157,17 +148,17 @@ public class Interpreter {
     private void executeIfStatement(IfNode statement) {
         boolean condition = (boolean) evaluateExpression(statement.getCondition());
         if (condition) {
-            for (ASTNode thenStatement : statement.getThenBody()) {
+            for (AbstractNode thenStatement : statement.getThenBody()) {
                 executeStatement(thenStatement);
             }
         } else {
-            for (ASTNode elseStatement : statement.getElseBody()) {
+            for (AbstractNode elseStatement : statement.getElseBody()) {
                 executeStatement(elseStatement);
             }
         }
     }
 
-    private Object evaluateExpression(ASTNode expression) {
+    private Object evaluateExpression(AbstractNode expression) {
         if (expression instanceof IdentifierNode) {
             String variableName = ((IdentifierNode) expression).getName();
             if (!symbolTable.containsKey(variableName)) {
@@ -182,14 +173,64 @@ public class Interpreter {
                 }
                 if (obj instanceof ArrayList<?>) {
                     Object item = ((ArrayList<?>) obj).get((Integer)index);
-                    return evaluateExpression((ASTNode) item);
+                    if (item instanceof AbstractNode) {
+                        return evaluateExpression((AbstractNode) item);
+                    } else {
+                        return item;
+                    }
                 } else if (obj instanceof String) {
                     return String.valueOf(((String) obj).charAt((Integer)index));
                 }
                 throw new RuntimeException("Can not access index of type " + obj.getClass());
             }
             return obj;
-        }  else if (expression instanceof ConditionNode) {
+        } else if (expression instanceof AsNode) {
+            AsNode as = (AsNode) expression;
+            Object value = evaluateExpression(as.getValue());
+            try {
+                if (as.getCast() == TokenType.NUMBER) {
+                    // try and convert whatever the object is as a number
+                    // can only convert string to number
+                    if (value instanceof String) {
+                        return Integer.parseInt((String)value);
+                    } else if (value instanceof Number) {
+                        return value;
+                    } else {
+                        throw new NumberFormatException();
+                    }
+                } else if (as.getCast() == TokenType.STRING) {
+                    if (value instanceof Number) {
+                        return String.valueOf(value);
+                    }  else if (value instanceof ArrayList<?>) {
+                        // try and combine all of the
+                        StringBuilder builder = new StringBuilder();
+                        for (Object node : (ArrayList<?>)value) {
+                            // check to make sure the node is string_literal
+                            builder.append(String.valueOf(node));
+                        }
+                        return builder.toString();
+                    } else if (value instanceof String) {
+                        return value;
+                    }
+                    throw new RuntimeException();
+                } else if (as.getCast() == TokenType.ARRAY) {
+                    if (value instanceof String) {
+                        // convert "hello" to ["h", "e", "l", "l", "o"]
+                        char[] chars = ((String) value).toCharArray();
+                        ArrayList<StringLiteralNode> res = new ArrayList<>();
+                        for (char c : chars) {
+                            res.add(new StringLiteralNode(String.valueOf(c)));
+                        }
+                        return res;
+                    } else if (value instanceof ArrayList<?>) {
+                        return value;
+                    }
+                    throw new RuntimeException();
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Could not parse \""+value.toString()+"\" to " + as.getCast().name() + ": " + e.getLocalizedMessage());
+            }
+        }else if (expression instanceof ConditionNode) {
             // evaluate the condition
             ConditionNode condition = (ConditionNode) expression;
             Object left = evaluateExpression(condition.getLeft());
@@ -215,7 +256,7 @@ public class Interpreter {
                     }
                 case "MATCHES":
                     if (left instanceof String && right instanceof Pattern) {
-                        return ((Pattern) right).matcher(left.toString()).matches();
+                        return ((Pattern) right).matcher(left.toString()).find();
                     } else {
                         throw new RuntimeException("Regex matching can only be applied to strings.");
                     }
@@ -229,7 +270,11 @@ public class Interpreter {
         } else if (expression instanceof RegexLiteralNode) {
             return ((RegexLiteralNode) expression).getRegex();
         } else if (expression instanceof ArrayLiteralNode) {
-            return ((ArrayLiteralNode) expression).getArray();
+            ArrayList values = new ArrayList();
+            for (AbstractNode node: ((ArrayList<AbstractNode>)((ArrayLiteralNode) expression).getArray())) {
+                values.add(evaluateExpression(node));
+            }
+            return values;
         }  else if (expression instanceof UppercaseNode) {
             Object node = evaluateExpression(((UppercaseNode) expression).getValue());
             if (!(node instanceof String)) {
@@ -256,9 +301,9 @@ public class Interpreter {
                     @Override
                     public int compare(Object o1, Object o2) {
                         // create and execute new compare node
-                        ConditionNode greater = new ConditionNode((ASTNode) o1, ">", (ASTNode) o2);
+                        ConditionNode greater = new ConditionNode((AbstractNode) o1, ">", (AbstractNode) o2);
                         Boolean greater_result = (Boolean) evaluateExpression(greater);
-                        ConditionNode equals = new ConditionNode((ASTNode) o1, "EQUALS", (ASTNode) o2);
+                        ConditionNode equals = new ConditionNode((AbstractNode) o1, "EQUALS", (AbstractNode) o2);
                         Boolean equals_result = (Boolean) evaluateExpression(equals);
                         if (greater_result) {
                             return 1;
@@ -333,7 +378,7 @@ public class Interpreter {
                     default:
                         throw new RuntimeException("Unsupported binary operator: " + binaryOp.getOperator());
                 }
-            } else if (left instanceof String && right instanceof String) {
+            }  else if (left instanceof String && right instanceof String) {
                 String leftStr = (String) left;
                 String rightStr = (String) right;
                 if (binaryOp.getOperator().charAt(0) == '+') {
@@ -344,6 +389,15 @@ public class Interpreter {
             } else {
                 throw new RuntimeException("Type mismatch in binary operation.");
             }
+        } else if (expression instanceof NegativeNode) {
+            // return the value, but negative
+            Object value = evaluateExpression(((NegativeNode) expression).getValue());
+            if (value instanceof Integer) {
+                return -(Integer)value;
+            } else if (value instanceof Float) {
+                return -(Float)value;
+            }
+            throw new RuntimeException("Can not apply - to " + value.getClass());
         } else if (expression instanceof LengthNode) {
             Object inner = evaluateExpression(((LengthNode) expression).getVariable());
             if (inner instanceof String) {

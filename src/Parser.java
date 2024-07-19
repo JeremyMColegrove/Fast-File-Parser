@@ -1,5 +1,5 @@
 import ast.*;
-import ast.ASTNode;
+import ast.AbstractNode;
 import ast.ConditionNode;
 import ast.IfNode;
 import ast.LengthNode;
@@ -9,7 +9,6 @@ import ast.SplitNode;
 import ast.WriteNode;
 import token.Token;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -25,7 +24,7 @@ public class Parser {
     }
 
     public ProgramNode parse() {
-        List<ASTNode> statements = new ArrayList<>();
+        List<AbstractNode> statements = new ArrayList<>();
         // remove begining newlines
         while (!isAtEnd() && match(TokenType.NEWLINE));
         while (!isAtEnd()) {
@@ -43,7 +42,7 @@ public class Parser {
         return program;
     }
 
-    private ASTNode parseStatement() {
+    private AbstractNode parseStatement() {
         Token token = peek();
         switch (token.getType()) {
             case READ:
@@ -68,54 +67,54 @@ public class Parser {
         }
     }
 
-    private ASTNode parsePrint() {
+    private AbstractNode parsePrint() {
         consume(TokenType.PRINT);
-        ASTNode value = parseExpression();
+        AbstractNode value = parseExpression();
         return new PrintNode(value);
     }
 
-    private ASTNode parseSet() {
+    private AbstractNode parseSet() {
         consume(TokenType.SET);
         IdentifierNode variable = parseIdentifier();
         consume(TokenType.TO);
-        ASTNode value = parseExpression();
+        AbstractNode value = parseExpression();
         return new SetNode(variable, value);
     }
 
-    private ASTNode parseRead() {
+    private AbstractNode parseRead() {
         consume(TokenType.READ);
-        ASTNode filename = parseExpression();
+        AbstractNode filename = parseExpression();
         consume(TokenType.TO);
         IdentifierNode variable = parseIdentifier();
         return new ReadNode(filename, variable);
     }
 
-    private ASTNode parseWrite() {
+    private AbstractNode parseWrite() {
         consume(TokenType.WRITE);
-        ASTNode content = parseExpression();
+        AbstractNode content = parseExpression();
         consume(TokenType.TO);
-        ASTNode filename = parseExpression();
+        AbstractNode filename = parseExpression();
         return new WriteNode(content, filename);
     }
 
-    private ASTNode parseAppend() {
+    private AbstractNode parseAppend() {
         consume(TokenType.APPEND);
-        ASTNode content = parseExpression();
+        AbstractNode content = parseExpression();
         consume(TokenType.TO);
-        ASTNode filename = parseExpression();
+        AbstractNode filename = parseExpression();
         return new AppendNode(content, filename);
     }
 
-    private ASTNode parseFor() {
+    private AbstractNode parseFor() {
         consume(TokenType.FOR);
         IdentifierNode variable = parseIdentifier();
         // check if is iterator or for
         if (check(TokenType.IN)) {
             consume(TokenType.IN);
-            ASTNode iterator = parseExpression();
+            AbstractNode iterator = parseExpression();
             consume(TokenType.DO);
             expectAndConsumeNewLines();
-            List<ASTNode> body = new ArrayList<>();
+            List<AbstractNode> body = new ArrayList<>();
             while (!check(TokenType.ENDFOR)) {
                 body.add(parseStatement());
                 expectAndConsumeNewLines();
@@ -124,12 +123,12 @@ public class Parser {
             return new IteratorNode(variable, iterator, body);
         }
         consume(TokenType.FROM);
-        ASTNode start = parseExpression();
+        AbstractNode start = parseExpression();
         consume(TokenType.TO);
-        ASTNode end = parseExpression();
+        AbstractNode end = parseExpression();
         consume(TokenType.DO);
         expectAndConsumeNewLines();
-        List<ASTNode> body = new ArrayList<>();
+        List<AbstractNode> body = new ArrayList<>();
         while (!check(TokenType.ENDFOR)) {
             body.add(parseStatement());
             expectAndConsumeNewLines();
@@ -139,13 +138,13 @@ public class Parser {
     }
 
 
-    private ASTNode parseIf() {
+    private AbstractNode parseIf() {
         consume(TokenType.IF);
-        ASTNode condition = parseCondition();
+        AbstractNode condition = parseCondition();
         consume(TokenType.THEN);
         expectAndConsumeNewLines();
-        List<ASTNode> thenBody = new ArrayList<>();
-        List<ASTNode> elsebody = new ArrayList<>();
+        List<AbstractNode> thenBody = new ArrayList<>();
+        List<AbstractNode> elsebody = new ArrayList<>();
         // parse THEN body
         while (!check(TokenType.ENDIF) && !check(TokenType.ELSE)) {
             thenBody.add(parseStatement());
@@ -163,19 +162,19 @@ public class Parser {
         return new IfNode(condition, thenBody, elsebody);
     }
 
-    private ASTNode parseSplit() {
+    private AbstractNode parseSplit() {
         consume(TokenType.SPLIT);
-        ASTNode variable = parseExpression();
+        AbstractNode variable = parseExpression();
         consume(TokenType.BY);
-        ASTNode delimiter = parseExpression();
+        AbstractNode delimiter = parseExpression();
         consume(TokenType.TO);
         IdentifierNode target = parseIdentifier();
         return new SplitNode(variable, delimiter, target);
     }
 
-    private ASTNode parseCondition() {
-        ASTNode right;
-        ASTNode left = parseExpression();
+    private AbstractNode parseCondition() {
+        AbstractNode right;
+        AbstractNode left = parseExpression();
         TokenType operator = peek().getType();
         switch (operator) {
             case OPERATOR:
@@ -195,35 +194,48 @@ public class Parser {
         }
     }
 
-    private ASTNode parseExpression() {
-        return parseAdditionSubtraction();
+    private AbstractNode parseExpression() {
+        AbstractNode expression = parseAdditionSubtraction();
+        // check if cast
+        if (match(TokenType.AS)) {
+            // get type
+            if (match(TokenType.NUMBER)) {
+                return new AsNode(expression, TokenType.NUMBER);
+            } else if (match(TokenType.STRING)) {
+                return new AsNode(expression, TokenType.STRING);
+            } else if (match(TokenType.ARRAY)) {
+                return new AsNode(expression, TokenType.ARRAY);
+            }
+            throw new RuntimeException("Cannt cast to " + peek().getType());
+        }
+        return expression;
     }
 
-    private ASTNode parseAdditionSubtraction() {
-        ASTNode left = parseMultiplicationDivision();
+    private AbstractNode parseAdditionSubtraction() {
+        AbstractNode left = parseMultiplicationDivision();
 
         while (matchOperator("+", "-")) {
             String operator = previous().getValue();
-            ASTNode right = parseMultiplicationDivision();
+            AbstractNode right = parseMultiplicationDivision();
             left = new BinaryOperationNode(left, operator, right);
         }
 
         return left;
     }
 
-    private ASTNode parseMultiplicationDivision() {
-        ASTNode left = parsePrimary();
+    private AbstractNode parseMultiplicationDivision() {
+        AbstractNode left = parsePrimary();
 
         while (matchOperator("*", "/")) {
             String operator = previous().getValue();
-            ASTNode right = parsePrimary();
+            AbstractNode right = parsePrimary();
             left = new BinaryOperationNode(left, operator, right);
         }
 
         return left;
     }
 
-    private ASTNode parsePrimary() {
+    private AbstractNode parsePrimary() {
         Token token = peek();
         switch (token.getType()) {
             case NUMBER_LITERAL:
@@ -252,14 +264,26 @@ public class Parser {
                 return parseSubstringExpression();
             case LEFT_PAREN:
                 return parseGrouping();
+            case OPERATOR:
+                if (peek().getValue().equals("-")) {
+                    return parseNegative();
+                } else {
+                    throw new RuntimeException("Unsupported operator " + peek().getValue());
+                }
             default:
                 throw new RuntimeException("Unexpected token in expression: " + token.getType() + " " + token.getValue());
         }
     }
 
-    private ASTNode parseGrouping() {
+    private NegativeNode parseNegative() {
+        consume(TokenType.OPERATOR);
+        AbstractNode value = parseExpression();
+        return new NegativeNode(value);
+    }
+
+    private AbstractNode parseGrouping() {
         consume(TokenType.LEFT_PAREN); // Consume '('
-        ASTNode expression = parseExpression();
+        AbstractNode expression = parseExpression();
         if (!match(TokenType.RIGHT_PAREN)) {
             throw new RuntimeException("Expected ')' after expression");
         }
@@ -269,47 +293,47 @@ public class Parser {
     private SubstringNode parseSubstringExpression() {
         consume(TokenType.SUBSTRING);
         // get variable
-        ASTNode variable = parseExpression();
+        AbstractNode variable = parseExpression();
         consume(TokenType.FROM);
-        ASTNode from = parseExpression();
+        AbstractNode from = parseExpression();
         consume(TokenType.TO);
-        ASTNode to = parseExpression();
+        AbstractNode to = parseExpression();
         return new SubstringNode(variable, from, to);
     }
 
     private SortNode parseSortExpression() {
         consume(TokenType.SORT);
-        ASTNode value = parseExpression();
+        AbstractNode value = parseExpression();
         return new SortNode(value);
     }
 
     private ReverseNode parseReverseExpression() {
         consume(TokenType.REVERSE);
-        ASTNode value = parseExpression();
+        AbstractNode value = parseExpression();
         return new ReverseNode(value);
     }
 
     private UppercaseNode parseUppercaseExpression() {
         consume(TokenType.UPPERCASE);
-        ASTNode right = parseExpression();
+        AbstractNode right = parseExpression();
         return new UppercaseNode(right);
     }
 
     private LowercaseNode parseLowercaseExpression() {
         consume(TokenType.LOWERCASE);
-        ASTNode right = parseExpression();
+        AbstractNode right = parseExpression();
         return new LowercaseNode(right);
     }
 
     private TrimNode parseTrimExpression() {
         consume(TokenType.TRIM);
-        ASTNode value = parseExpression();
+        AbstractNode value = parseExpression();
         return new TrimNode(value);
     }
 
     private ArrayLiteralNode parseArrayLiteral() {
         consume(TokenType.LEFT_BRACKET);
-        List<ASTNode> array = new ArrayList<>();
+        List<AbstractNode> array = new ArrayList<>();
 
         // get first element in array
         if (!check(TokenType.RIGHT_BRACKET)) {
@@ -330,7 +354,7 @@ public class Parser {
         // check if there is an accessor in here
         if (match(TokenType.LEFT_BRACKET)) {
             // get the accessor
-            ASTNode accessor = parseExpression();
+            AbstractNode accessor = parseExpression();
             consume(TokenType.RIGHT_BRACKET);
             return new IdentifierNode(variable, accessor);
         }
@@ -357,9 +381,9 @@ public class Parser {
         return new StringLiteralNode(token.getValue());
     }
 
-    private ASTNode parseLengthExpression() {
+    private AbstractNode parseLengthExpression() {
         consume(TokenType.LENGTH);
-        ASTNode node = parsePrimary();
+        AbstractNode node = parsePrimary();
         return new LengthNode(node);
     }
 

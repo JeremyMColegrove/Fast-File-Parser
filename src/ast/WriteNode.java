@@ -1,22 +1,22 @@
 package ast;
 
-public class WriteNode extends ASTNode {
-    private ASTNode content;
-    private ASTNode filename;
+public class WriteNode extends AbstractNode {
+    private AbstractNode content;
+    private AbstractNode filename;
 
     @Override
     public String toString() {
         return "WRITE " + content.toString() + " TO " + filename;
     }
 
-    public WriteNode(ASTNode content, ASTNode filename) {
+    public WriteNode(AbstractNode content, AbstractNode filename) {
         this.content = content;
         this.filename = filename;
     }
-    public ASTNode getContent() {
+    public AbstractNode getContent() {
         return content;
     }
-    public ASTNode getFilename() {
+    public AbstractNode getFilename() {
         return filename;
     }
 }

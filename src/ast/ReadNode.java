@@ -1,7 +1,7 @@
 package ast;
 
-public class ReadNode extends ASTNode {
-    private ASTNode filename;
+public class ReadNode extends AbstractNode {
+    private AbstractNode filename;
     private IdentifierNode variable;
 
     @Override
@@ -9,11 +9,11 @@ public class ReadNode extends ASTNode {
         return "READ " + filename + " INTO " + variable.toString();
     }
 
-    public ReadNode(ASTNode filename, IdentifierNode variable) {
+    public ReadNode(AbstractNode filename, IdentifierNode variable) {
         this.filename = filename;
         this.variable = variable;
     }
-    public ASTNode getFilename() {
+    public AbstractNode getFilename() {
         return filename;
     }
     public IdentifierNode getVariable() {

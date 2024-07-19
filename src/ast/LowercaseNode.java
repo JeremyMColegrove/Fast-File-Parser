@@ -1,12 +1,12 @@
 package ast;
 
-public class LowercaseNode extends ASTNode {
-    private ASTNode value;
-    public LowercaseNode(ASTNode value) {
+public class LowercaseNode extends AbstractNode {
+    private AbstractNode value;
+    public LowercaseNode(AbstractNode value) {
         this.value = value;
     }
 
-    public ASTNode getValue() {
+    public AbstractNode getValue() {
         return value;
     }
 
