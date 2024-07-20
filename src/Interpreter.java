@@ -56,7 +56,7 @@ public class Interpreter {
         ArrayList words = new ArrayList<>();
         String[] split = left.toString().split(delimiter.toString());
         for (String word : split) {
-            words.add(new StringLiteralNode(word));
+            words.add(word);
         }
         symbolTable.put(statement.getTarget().getName(), words);
     }
@@ -243,40 +243,6 @@ public class Interpreter {
                 throw new RuntimeException("Could not parse \""+value.toString()+"\" to " + as.getCast().name() + ": " + e.getLocalizedMessage());
             }
         }
-//        else if (expression instanceof ConditionNode) {
-//            // evaluate the condition
-//            ConditionNode condition = (ConditionNode) expression;
-//            Object left = evaluateExpression(condition.getLeft());
-//            Object right = evaluateExpression(condition.getRight());
-//            switch (condition.getOperator()) {
-//                case "EQUALS":
-//                    try {
-//                        return left.equals(right);
-//                    } catch (Exception e) {
-//                        return left == right;
-//                    }
-//                case ">":
-//                    if (left instanceof Integer && right instanceof Integer) {
-//                        return ((Integer) left) > ((Integer)right);
-//                    } else {
-//                        throw new RuntimeException("Operator > can only be applied to integers.");
-//                    }
-//                case "<":
-//                    if (left instanceof Integer && right instanceof Integer) {
-//                        return ((Integer) left) < ((Integer)right);
-//                    } else {
-//                        throw new RuntimeException("Operator < can only be applied to integers.");
-//                    }
-//                case "MATCHES":
-//                    if (left instanceof String && right instanceof Pattern) {
-//                        return ((Pattern) right).matcher(left.toString()).find();
-//                    } else {
-//                        throw new RuntimeException("Regex matching can only be applied to strings.");
-//                    }
-//                default:
-//                    throw new RuntimeException("Invalid conditional operator" + condition.getOperator());
-//            }
-//        }
         else if (expression instanceof StringLiteralNode) {
             return ((StringLiteralNode) expression).getValue();
         } else if (expression instanceof NumberLiteralNode) {
