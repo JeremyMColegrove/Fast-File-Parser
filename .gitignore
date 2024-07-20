@@ -2,5 +2,6 @@
 .idea
 *.iml
 *.dp
+*.facil
 src/logs.txt
 src/output.txt

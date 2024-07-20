@@ -175,6 +175,9 @@ public class Lexer {
             case "FOR":
                 addToken(TokenType.FOR);
                 break;
+            case "NOT":
+                addToken(TokenType.NOT);
+                break;
             case "ENDFOR":
                 addToken(TokenType.ENDFOR);
                 break;

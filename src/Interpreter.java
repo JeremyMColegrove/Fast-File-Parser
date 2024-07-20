@@ -146,8 +146,14 @@ public class Interpreter {
     }
 
     private void executeIfStatement(IfNode statement) {
-        boolean condition = (boolean) evaluateExpression(statement.getCondition());
-        if (condition) {
+        Object expression = evaluateExpression(statement.getCondition());
+
+        Boolean valid = expression instanceof Boolean || expression instanceof Integer;
+        if (!valid) {
+            throw new RuntimeException("Expected BOOLEAN, found " + expression.getClass());
+        }
+        Boolean cond = expression instanceof Boolean ? (Boolean)expression : (Integer)expression!=0;
+        if (cond) {
             for (INode thenStatement : statement.getThenBody()) {
                 executeStatement(thenStatement);
             }
@@ -165,6 +171,12 @@ public class Interpreter {
                 throw new RuntimeException("Undeclared variable: " + variableName);
             }
             return symbolTable.get(variableName);
+        } else if (expression instanceof NotNode) {
+          Object value = evaluateExpression(((NotNode) expression).getValue());
+          if (value instanceof Boolean) {
+            return !(Boolean)value;
+          }
+          throw new RuntimeException("Can not apply NOT to " + value.getClass());
         } else if (expression instanceof IndexNode) {
             Object value = evaluateExpression(((IndexNode) expression).getValue());
             Object index = evaluateExpression(((IndexNode) expression).getIndex());
@@ -172,7 +184,6 @@ public class Interpreter {
             if (index instanceof Integer) {
                 Integer i = (Integer) index;
                 try {
-
                     if (value instanceof ArrayList<?>) {
                         return ((ArrayList<?>) value).get(i);
                     } else if (value instanceof String) {
@@ -218,9 +229,9 @@ public class Interpreter {
                     if (value instanceof String) {
                         // convert "hello" to ["h", "e", "l", "l", "o"]
                         char[] chars = ((String) value).toCharArray();
-                        ArrayList<StringLiteralNode> res = new ArrayList<>();
+                        ArrayList<Object> res = new ArrayList<>();
                         for (char c : chars) {
-                            res.add(new StringLiteralNode(String.valueOf(c)));
+                            res.add(String.valueOf(c));
                         }
                         return res;
                     } else if (value instanceof ArrayList<?>) {
@@ -231,40 +242,42 @@ public class Interpreter {
             } catch (Exception e) {
                 throw new RuntimeException("Could not parse \""+value.toString()+"\" to " + as.getCast().name() + ": " + e.getLocalizedMessage());
             }
-        }else if (expression instanceof ConditionNode) {
-            // evaluate the condition
-            ConditionNode condition = (ConditionNode) expression;
-            Object left = evaluateExpression(condition.getLeft());
-            Object right = evaluateExpression(condition.getRight());
-            switch (condition.getOperator()) {
-                case "EQUALS":
-                    try {
-                        return left.equals(right);
-                    } catch (Exception e) {
-                        return left == right;
-                    }
-                case ">":
-                    if (left instanceof Integer && right instanceof Integer) {
-                        return ((Integer) left) > ((Integer)right);
-                    } else {
-                        throw new RuntimeException("Operator > can only be applied to integers.");
-                    }
-                case "<":
-                    if (left instanceof Integer && right instanceof Integer) {
-                        return ((Integer) left) < ((Integer)right);
-                    } else {
-                        throw new RuntimeException("Operator < can only be applied to integers.");
-                    }
-                case "MATCHES":
-                    if (left instanceof String && right instanceof Pattern) {
-                        return ((Pattern) right).matcher(left.toString()).find();
-                    } else {
-                        throw new RuntimeException("Regex matching can only be applied to strings.");
-                    }
-                default:
-                    throw new RuntimeException("Invalid conditional operator" + condition.getOperator());
-            }
-        } else if (expression instanceof StringLiteralNode) {
+        }
+//        else if (expression instanceof ConditionNode) {
+//            // evaluate the condition
+//            ConditionNode condition = (ConditionNode) expression;
+//            Object left = evaluateExpression(condition.getLeft());
+//            Object right = evaluateExpression(condition.getRight());
+//            switch (condition.getOperator()) {
+//                case "EQUALS":
+//                    try {
+//                        return left.equals(right);
+//                    } catch (Exception e) {
+//                        return left == right;
+//                    }
+//                case ">":
+//                    if (left instanceof Integer && right instanceof Integer) {
+//                        return ((Integer) left) > ((Integer)right);
+//                    } else {
+//                        throw new RuntimeException("Operator > can only be applied to integers.");
+//                    }
+//                case "<":
+//                    if (left instanceof Integer && right instanceof Integer) {
+//                        return ((Integer) left) < ((Integer)right);
+//                    } else {
+//                        throw new RuntimeException("Operator < can only be applied to integers.");
+//                    }
+//                case "MATCHES":
+//                    if (left instanceof String && right instanceof Pattern) {
+//                        return ((Pattern) right).matcher(left.toString()).find();
+//                    } else {
+//                        throw new RuntimeException("Regex matching can only be applied to strings.");
+//                    }
+//                default:
+//                    throw new RuntimeException("Invalid conditional operator" + condition.getOperator());
+//            }
+//        }
+        else if (expression instanceof StringLiteralNode) {
             return ((StringLiteralNode) expression).getValue();
         } else if (expression instanceof NumberLiteralNode) {
             return ((NumberLiteralNode) expression).getNumber();
@@ -302,9 +315,9 @@ public class Interpreter {
                     @Override
                     public int compare(Object o1, Object o2) {
                         // create and execute new compare node
-                        ConditionNode greater = new ConditionNode((INode) o1, ">", (INode) o2);
+                        INode greater = new BinaryOperationNode((INode) o1, ">", (INode) o2);
                         Boolean greater_result = (Boolean) evaluateExpression(greater);
-                        ConditionNode equals = new ConditionNode((INode) o1, "EQUALS", (INode) o2);
+                        INode equals = new BinaryOperationNode((INode) o1, "EQUALS", (INode) o2);
                         Boolean equals_result = (Boolean) evaluateExpression(equals);
                         if (greater_result) {
                             return 1;
@@ -361,34 +374,28 @@ public class Interpreter {
             BinaryOperationNode binaryOp = (BinaryOperationNode) expression;
             Object left = evaluateExpression(binaryOp.getLeft());
             Object right = evaluateExpression(binaryOp.getRight());
-
-            if (left instanceof Number && right instanceof Number) {
-                int leftVal = (int) left;
-                int rightVal = (int) right;
-                switch (binaryOp.getOperator().charAt(0)) {
-                    case '+':
-                        return leftVal + rightVal;
-                    case '-':
-                        return leftVal - rightVal;
-                    case '*':
-                        return leftVal * rightVal;
-                    case '^':
-                        return Math.pow(leftVal, rightVal);
-                    case '/':
-                        return leftVal / rightVal;
-                    default:
-                        throw new RuntimeException("Unsupported binary operator: " + binaryOp.getOperator());
-                }
-            }  else if (left instanceof String && right instanceof String) {
-                String leftStr = (String) left;
-                String rightStr = (String) right;
-                if (binaryOp.getOperator().charAt(0) == '+') {
-                    return leftStr + rightStr;
-                } else {
-                    throw new RuntimeException("Unsupported string operation: " + binaryOp.getOperator());
-                }
-            } else {
-                throw new RuntimeException("Type mismatch in binary operation.");
+            // we can assume all is the same for everything but string and regex
+            switch (binaryOp.getOperator()) {
+                case "EQUALS":
+                    return left instanceof String && right instanceof String ? left.equals(right) : left == right;
+                case "MATCHES":
+                    return ((Pattern) right).matcher((String) left).find();
+                case ">":
+                    return (Integer) left > (Integer) right;
+                case "<":
+                    return (Integer) left < (Integer) right;
+                case "+":
+                    return left instanceof String && right instanceof String ? (String) left + right : (Integer) left + (Integer) right;
+                case "-":
+                    return (Integer) left - (Integer) right;
+                case "*":
+                    return (Integer) left * (Integer) right;
+                case "^":
+                    return Math.pow((Integer) left, (Integer) right);
+                case "/":
+                    return (Integer) left / (Integer) right;
+                default:
+                    throw new RuntimeException("Type mismatch in binary operation.");
             }
         } else if (expression instanceof NegativeNode) {
             // return the value, but negative

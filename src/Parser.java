@@ -1,6 +1,5 @@
 import ast.*;
 import ast.INode;
-import ast.ConditionNode;
 import ast.IfNode;
 import ast.LengthNode;
 import ast.ProgramNode;
@@ -140,7 +139,7 @@ public class Parser {
 
     private INode parseIf() {
         consume(TokenType.IF);
-        INode condition = parseCondition();
+        INode expression = parseExpression();
         consume(TokenType.THEN);
         expectAndConsumeNewLines();
         List<INode> thenBody = new ArrayList<>();
@@ -159,7 +158,7 @@ public class Parser {
             }
         }
         consume(TokenType.ENDIF);
-        return new IfNode(condition, thenBody, elsebody);
+        return new IfNode(expression, thenBody, elsebody);
     }
 
     private INode parseSplit() {
@@ -172,50 +171,59 @@ public class Parser {
         return new SplitNode(variable, delimiter, target);
     }
 
-    private INode parseCondition() {
-        INode right;
-        INode left = parseExpression();
+
+
+    private INode parseExpressionModifier(INode left) {
+        INode right = left;
         TokenType operator = peek().getType();
         switch (operator) {
             case OPERATOR:
-                consume(TokenType.OPERATOR).getValue();
+                String op = consume(TokenType.OPERATOR).getValue();
                 right = parseExpression();
-                return new ConditionNode(left, peek().getValue(), right);
+                return new BinaryOperationNode(left, op, right);
             case MATCHES:
                 consume(TokenType.MATCHES);
                 right = parseRegexLiteral();
-                return new ConditionNode(left, "MATCHES", right);
+                return new BinaryOperationNode(left, "MATCHES", right);
             case EQUALS:
                 consume(TokenType.EQUALS);
                 right = parseExpression();
-                return new ConditionNode(left, "EQUALS", right);
+                return new BinaryOperationNode(left, "EQUALS", right);
+            case AS:
+                while (match(TokenType.AS)) {
+                    // get type
+                    if (match(TokenType.NUMBER)) {
+                        right = new  AsNode(right, TokenType.NUMBER);
+                    } else if (match(TokenType.STRING)) {
+                        right = new AsNode(right, TokenType.STRING);
+                    } else if (match(TokenType.ARRAY)) {
+                        right = new AsNode(right, TokenType.ARRAY);
+                    } else {
+                        throw new RuntimeException("Cannot cast to " + peek().getType());
+                    }
+                }
+                break;
+            case LEFT_BRACKET:
+                while (match(TokenType.LEFT_BRACKET)) {
+                    // get type
+                    INode index = parseExpression();
+                    consume(TokenType.RIGHT_BRACKET);
+                    right = new IndexNode(right, index);
+                }
+                break;
             default:
-                throw new RuntimeException("Condition expected.");
+               return right;
         }
+        return right;
     }
 
     private INode parseExpression() {
+        // get the initial expression
         INode expression = parseAdditionSubtraction();
-        // check if cast
-        while (match(TokenType.AS)) {
-            // get type
-            if (match(TokenType.NUMBER)) {
-                expression = new  AsNode(expression, TokenType.NUMBER);
-            } else if (match(TokenType.STRING)) {
-                expression = new AsNode(expression, TokenType.STRING);
-            } else if (match(TokenType.ARRAY)) {
-                expression = new AsNode(expression, TokenType.ARRAY);
-            } else {
-                throw new RuntimeException("Cannot cast to " + peek().getType());
-            }
-        }
-        // match any array accessor
-        while (match(TokenType.LEFT_BRACKET)) {
-            // get type
-            INode index = parseExpression();
-            consume(TokenType.RIGHT_BRACKET);
-            expression = new IndexNode(expression, index);
-        }
+        // parse expression modifiers (MATCHES, EQUALS, OPERATOR, CAST (AS), ARRAY INDEX)
+        // example --> 5+5 AS STRING, 5 is the expression, and we can't see the + or the AS.
+        // This is why we have to check expressionModifier, so we capture rest of the expression
+        expression = parseExpressionModifier(expression);
         return expression;
     }
 
@@ -270,6 +278,8 @@ public class Parser {
                 return parseReverseExpression();
             case SUBSTRING:
                 return parseSubstringExpression();
+            case NOT:
+                return parseNotExpression();
             case LEFT_PAREN:
                 return parseGrouping();
             case OPERATOR:
@@ -281,6 +291,12 @@ public class Parser {
             default:
                 throw new RuntimeException("Unexpected token in expression: " + token.getType() + " " + token.getValue());
         }
+    }
+
+    private NotNode parseNotExpression() {
+        consume(TokenType.NOT);
+        INode value = parseExpression();
+        return new NotNode(value);
     }
 
     private NegativeNode parseNegative() {
