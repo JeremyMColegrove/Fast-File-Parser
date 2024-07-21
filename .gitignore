@@ -6,3 +6,7 @@
 *.ffp
 tests/logs.txt
 tests/output.txt
+FFP-VSExtension/node_modules
+FFP-VSExtension/out
+FFP-VSExtension/dist
+
