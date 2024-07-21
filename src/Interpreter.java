@@ -312,7 +312,8 @@ public class Interpreter {
                 return new StringBuilder(value.toString()).reverse().toString();
             } else if (value instanceof ArrayList<?>) {
                 // return reversed array
-                ArrayList result = new ArrayList(((ArrayList)value).reversed());
+                ArrayList result = (ArrayList)value;
+                Collections.reverse(result);
                 return result;
             }
             throw new RuntimeException("Can only reverse STRING and ARRAY.");

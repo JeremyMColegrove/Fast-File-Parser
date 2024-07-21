@@ -190,31 +190,29 @@ public class Parser {
                 right = parseExpression();
                 return new BinaryOperationNode(left, "EQUALS", right);
             case AS:
-                while (match(TokenType.AS)) {
-                    // get type
-                    if (match(TokenType.NUMBER)) {
-                        right = new  AsNode(right, TokenType.NUMBER);
-                    } else if (match(TokenType.STRING)) {
-                        right = new AsNode(right, TokenType.STRING);
-                    } else if (match(TokenType.ARRAY)) {
-                        right = new AsNode(right, TokenType.ARRAY);
-                    } else {
-                        throw new RuntimeException("Cannot cast to " + peek().getType());
-                    }
+                consume(TokenType.AS);
+                // get type
+                if (match(TokenType.NUMBER)) {
+                    right = new  AsNode(right, TokenType.NUMBER);
+                } else if (match(TokenType.STRING)) {
+                    right = new AsNode(right, TokenType.STRING);
+                } else if (match(TokenType.ARRAY)) {
+                    right = new AsNode(right, TokenType.ARRAY);
+                } else {
+                    throw new RuntimeException("Cannot cast to " + peek().getType());
                 }
-                break;
+                return right;
             case LEFT_BRACKET:
-                while (match(TokenType.LEFT_BRACKET)) {
-                    // get type
-                    INode index = parseExpression();
-                    consume(TokenType.RIGHT_BRACKET);
-                    right = new IndexNode(right, index);
-                }
-                break;
+                consume(TokenType.LEFT_BRACKET);
+                // get type
+                INode index = parseExpression();
+                consume(TokenType.RIGHT_BRACKET);
+                right = new IndexNode(right, index);
+
+                return right;
             default:
-               return right;
+               return null;
         }
-        return right;
     }
 
     private INode parseExpression() {
@@ -223,7 +221,10 @@ public class Parser {
         // parse expression modifiers (MATCHES, EQUALS, OPERATOR, CAST (AS), ARRAY INDEX)
         // example --> 5+5 AS STRING, 5 is the expression, and we can't see the + or the AS.
         // This is why we have to check expressionModifier, so we capture rest of the expression
-        expression = parseExpressionModifier(expression);
+        INode next_expression;
+        while ((next_expression = parseExpressionModifier(expression)) != null) {
+            expression = next_expression;
+        }
         return expression;
     }
 

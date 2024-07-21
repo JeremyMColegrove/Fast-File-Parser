@@ -1,31 +1,31 @@
-# Facil Programming Language
+# FFP Programming Language
 
-Facil is a programming language designed to read like natural language, similar to SQL, and is primarily used for processing and parsing files. 
+FFP is a programming language designed to read like natural language, similar to SQL, and is primarily used for processing and parsing files. 
 It is implemented in Java and distributed as a .jar file.
 
 ## Usage
 
-To run a Facil script, use the following command:
+To run a FFP script, use the following command:
 ```textmate
-facil <file.fcl>
+ffp <file.ffp>
 ```
 
 
 For example:
 ```textmate
-facil myscript.fcl
+ffp myscript.ffp
 ```
 
 ### Help Command
 
 To display the help message, use:
 ```textmate
-facil --help
+ffp --help
 ```
 
 ## Keywords
 
-Facil supports the following keywords:
+FFP supports the following keywords:
 ```textmate
 SET, READ, WRITE, APPEND, FOR, ENDFOR, SPLIT, BY, IF, ENDIF,
 FROM, TO, AS, DO, CONTAINS, MATCHES, REPLACE, PRINT, JOIN,
@@ -36,7 +36,7 @@ IN, EQUALS, NOT, ELSE, COMMA, REVERSE, NUMBER, STRING, ARRAY.
 
 ## Comments
 
-Comments in Facil are denoted by the `#` symbol. Any text following `#` on the same line is considered a comment and is ignored by the interpreter.
+Comments in FFP are denoted by the `#` symbol. Any text following `#` on the same line is considered a comment and is ignored by the interpreter.
 
 ```textmate
 # This is a comment
@@ -47,12 +47,12 @@ SET x TO "Hello"
 ## Structure
 
 ### Data Types
-Facil only consists of 3 data types: `STRING`, `NUMBER`, `ARRAY`.
+FFP only consists of 3 data types: `STRING`, `NUMBER`, `ARRAY`.
 It only supports integer arithmetic, no floating point numbers or silly decimals.
 
 ### CAST
 
-Casting data types in Facil are written as follows:
+Casting data types in FFP are written as follows:
 ```textmate
 SET x TO "10"
 PRINT x AS NUMBER
@@ -60,7 +60,7 @@ PRINT x AS NUMBER
 
 ### IF/ELSE
 
-Conditional statements in Facil are written as follows:
+Conditional statements in FFP are written as follows:
 ```textmate
 IF condition THEN
     # Then code

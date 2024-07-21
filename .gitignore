@@ -3,5 +3,6 @@
 *.iml
 *.dp
 *.facil
+*.ffp
 tests/logs.txt
 tests/output.txt

@@ -1,5 +1,5 @@
-Facil Programming Language
-Usage: facil <file.fcl>
+FFP Programming Language
+Usage: ffp <file.ffp>
 Keywords:
   SET, READ, WRITE, APPEND, FOR, ENDFOR, SPLIT, BY, IF, ENDIF,
   FROM, TO, AS, DO, CONTAINS, MATCHES, REPLACE, PRINT, JOIN,
