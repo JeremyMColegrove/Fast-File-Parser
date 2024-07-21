@@ -10,13 +10,16 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class FFP {
     public static void main(String args[]) throws IOException {
+
         boolean showTree = false;
         boolean showHelp = false;
         boolean showTokens = false;
-        String path = args.length > 0 ? args[0] : "--help";
+
+        String path = null;
         for (String arg : args) {
             if (arg.equals("-d")) {
                 showTree = true;
@@ -24,7 +27,12 @@ public class FFP {
                 showTokens = true;
             } else if (arg.equals("--help")) {
                 showHelp = true;
+            } else {
+                path = arg;
             }
+        }
+        if (path == null) {
+            showHelp = true;
         }
 
         if (showHelp) {
@@ -36,7 +44,7 @@ public class FFP {
                 content.append(line).append("\n");
             }
             System.out.println(content);
-            return;
+            exit();
         }
 
         String code = Files.readString(Path.of(path), StandardCharsets.UTF_8);
@@ -44,7 +52,7 @@ public class FFP {
         ArrayList<Token> tokens = new ArrayList(lexer.tokenize());
         if (showTokens) {
             for (Token token: tokens) {
-                System.out.println(token.getType() + " : " + token.getValue());
+                System.out.printf("%-15s: %s%n", token.type, token.value);
             }
         }
 
@@ -53,9 +61,14 @@ public class FFP {
         if (showTree) {
             System.out.println(tree);
         }
-//        System.out.println(tree);
         Interpreter interpreter = new Interpreter();
         interpreter.execute(tree);
+
+        exit();
+    }
+
+    private static void exit() throws IOException {
+        System.exit(0);
     }
 }
 
