@@ -1,12 +1,5 @@
 /out/production/**/*
 .idea
-*.iml
-*.dp
-*.facil
 *.ffp
-tests/logs.txt
-tests/output.txt
-FFP-VSExtension/node_modules
-FFP-VSExtension/out
-FFP-VSExtension/dist
+tests/**/*
 
