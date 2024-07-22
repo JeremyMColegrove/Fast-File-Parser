@@ -5,6 +5,8 @@ It is implemented in Java and distributed as a .jar file.
 
 ## Usage
 
+### If you are looking to install FFP, you can [download it here.](https://github.com/JeremyMColegrove/FFP/releases)
+
 To run a FFP script, use the following command:
 ```textmate
 ffp <file.ffp>
