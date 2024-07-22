@@ -223,9 +223,6 @@ public class Lexer {
             case "DO":
                 addToken(TokenType.DO);
                 break;
-            case "CONTAINS":
-                addToken(TokenType.CONTAINS);
-                break;
             case "MATCHES":
                 addToken(TokenType.MATCHES);
                 break;
@@ -235,14 +232,8 @@ public class Lexer {
             case "ELSE":
                 addToken(TokenType.ELSE);
                 break;
-            case "REPLACE":
-                addToken(TokenType.REPLACE);
-                break;
             case "PRINT":
                 addToken(TokenType.PRINT);
-                break;
-            case "JOIN":
-                addToken(TokenType.JOIN);
                 break;
             case "TRIM":
                 addToken(TokenType.TRIM);
