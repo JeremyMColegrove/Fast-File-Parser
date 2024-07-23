@@ -3,7 +3,7 @@ package ast;
 import java.util.List;
 
 public class IteratorNode implements INode {
-    private IdentifierNode variable;
+    private INode variable;
     private INode iterator;
     private List<INode> body;
 
@@ -16,12 +16,12 @@ public class IteratorNode implements INode {
         return res + "] ENDFOR";
     }
 
-    public IteratorNode(IdentifierNode variable, INode iterator, List<INode> body) {
+    public IteratorNode(INode variable, INode iterator, List<INode> body) {
         this.variable = variable;
         this.iterator = iterator;
         this.body = body;
     }
-    public IdentifierNode getVariable() {
+    public INode getVariable() {
         return variable;
     }
     public INode getIterator() {

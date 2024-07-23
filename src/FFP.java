@@ -10,63 +10,58 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 public class FFP {
     public static void main(String args[]) throws IOException {
-
-        boolean showTree = false;
-        boolean showHelp = false;
-        boolean showTokens = false;
-
-        String path = null;
-        for (String arg : args) {
-            if (arg.equals("-d")) {
-                showTree = true;
-            } else if (arg.equals("-t")) {
-                showTokens = true;
-            } else if (arg.equals("--help")) {
-                showHelp = true;
-            } else {
-                path = arg;
-            }
-        }
-        if (path == null) {
-            showHelp = true;
-        }
-
-        if (showHelp) {
-            InputStream help = FFP.class.getClassLoader().getResourceAsStream("help.txt");
-            BufferedReader reader = new BufferedReader(new InputStreamReader(help));
-            StringBuilder content = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                content.append(line).append("\n");
-            }
-            System.out.println(content);
+        if (args.length == 0 || args[0] == null || args[0].equals("--help") || args[0].equals("-help")) {
+            showHelp();
             exit();
         }
-
+        String path = args[0];
+        // get code
         String code = Files.readString(Path.of(path), StandardCharsets.UTF_8);
+        // pre process
+        PreProcessor processor = new PreProcessor();
+        code = processor.process(code);
+        // lexer phase
         Lexer lexer = new Lexer(code);
-        ArrayList<Token> tokens = new ArrayList(lexer.tokenize());
-        if (showTokens) {
+        List<Token> tokens = lexer.tokenize();
+        // print tokens if requested
+        if (processor.SHOWTOKENS) {
             for (Token token: tokens) {
                 System.out.printf("%-15s: %s%n", token.type, token.value);
             }
         }
-
+        // syntax parsing
         Parser parser = new Parser(tokens);
         ProgramNode tree = parser.parse();
-        if (showTree) {
+        // print syntax tree if requested
+        if (processor.SHOWTREE) {
             System.out.println(tree);
         }
-        Interpreter interpreter = new Interpreter();
+        // interpreter
+        Interpreter interpreter = new Interpreter(processor.AUTONEWLINE);
+        // execute!
         interpreter.execute(tree);
-
+        // all done!
         exit();
     }
 
+    private static void start(String code) {
+
+    }
+    private static void showHelp() throws IOException {
+        InputStream help = FFP.class.getClassLoader().getResourceAsStream("help.txt");
+        BufferedReader reader = new BufferedReader(new InputStreamReader(help));
+        StringBuilder content = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            content.append(line).append("\n");
+        }
+        System.out.println(content);
+    }
     private static void exit() throws IOException {
         System.exit(0);
     }

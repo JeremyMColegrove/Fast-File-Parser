@@ -62,7 +62,7 @@ public class Parser {
                 return parsePrint();
             // Handle other statements
             default:
-                throw new RuntimeException("Unexpected token: " + token.getValue());
+                throw new RuntimeException("Unexpected token: " + token.getType());
         }
     }
 
@@ -74,7 +74,7 @@ public class Parser {
 
     private INode parseSet() {
         consume(TokenType.SET);
-        IdentifierNode variable = parseIdentifier();
+        INode variable = parseExpression();
         consume(TokenType.TO);
         INode value = parseExpression();
         return new SetNode(variable, value);
@@ -84,7 +84,7 @@ public class Parser {
         consume(TokenType.READ);
         INode filename = parseExpression();
         consume(TokenType.TO);
-        IdentifierNode variable = parseIdentifier();
+        INode variable = parseExpression();
         return new ReadNode(filename, variable);
     }
 
@@ -106,7 +106,7 @@ public class Parser {
 
     private INode parseFor() {
         consume(TokenType.FOR);
-        IdentifierNode variable = parseIdentifier();
+        INode variable = parseIdentifier();
         // check if is iterator or for
         if (check(TokenType.IN)) {
             consume(TokenType.IN);
@@ -167,7 +167,7 @@ public class Parser {
         consume(TokenType.BY);
         INode delimiter = parseExpression();
         consume(TokenType.TO);
-        IdentifierNode target = parseIdentifier();
+        INode target = parseIdentifier();
         return new SplitNode(variable, delimiter, target);
     }
 
@@ -203,16 +203,20 @@ public class Parser {
                 }
                 return right;
             case LEFT_BRACKET:
-                consume(TokenType.LEFT_BRACKET);
-                // get type
-                INode index = parseExpression();
-                consume(TokenType.RIGHT_BRACKET);
-                right = new IndexNode(right, index);
-
-                return right;
+                return parseAllIndicies(left);
             default:
                return null;
         }
+    }
+
+    private INode parseAllIndicies(INode expression) {
+        while (match(TokenType.LEFT_BRACKET)) {
+            // get type
+            INode index = parseExpression();
+            consume(TokenType.RIGHT_BRACKET);
+            expression = new IndexNode(expression, index);
+        }
+        return expression;
     }
 
     private INode parseExpression() {
@@ -374,10 +378,12 @@ public class Parser {
         return new ArrayLiteralNode(array);
     }
 
-    private IdentifierNode parseIdentifier() {
+    private INode parseIdentifier() {
         String variable = consume(TokenType.IDENTIFIER).getValue();
-        // check if there is an accessor in here
-        return new IdentifierNode(variable);
+        // check if there is an accessor in here directly after
+        INode expression = new IdentifierNode(variable);
+        INode withIndicies = parseAllIndicies(expression);
+        return withIndicies;
     }
 
     private RegexLiteralNode parseRegexLiteral() {
