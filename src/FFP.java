@@ -19,8 +19,16 @@ public class FFP {
             exit();
         }
 
-        // READ CODE
-        String code = Files.readString(Path.of(args[0]), StandardCharsets.UTF_8);
+        String code;
+        if (args[0].equals("--code")) {
+            // READ CODE
+            code = args[1];
+        } else {
+            // READ CODE
+            code = Files.readString(Path.of(args[0]), StandardCharsets.UTF_8);
+        }
+
+
 
         // PRE PROCESS
         PreProcessor processor = new PreProcessor();

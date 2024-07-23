@@ -49,7 +49,7 @@ public class Lexer {
             }
 
             // Handle string literals
-            if (currentChar == '"') {
+            if (currentChar == '"' || currentChar == '\'') {
                 tokenizeStringLiteral();
                 continue;
             }
@@ -288,10 +288,11 @@ public class Lexer {
     private void tokenizeStringLiteral() {
         StringBuilder lexeme = new StringBuilder();
 
+        char quote = code.charAt(position);
         // Skip opening double quote
         position++;
 
-        while (position < code.length() && code.charAt(position) != '"') {
+        while (position < code.length() && code.charAt(position) != quote) {
             lexeme.append(code.charAt(position));
             position++;
         }

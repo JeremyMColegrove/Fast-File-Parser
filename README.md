@@ -7,6 +7,7 @@ It is implemented in Java and distributed as an installable .exe file.
 
 ### If you are looking to install FFP, you can [download it here.](https://github.com/JeremyMColegrove/FFP/releases)
 
+### Run File
 To run a FFP script, use the following command:
 ```textmate
 ffp <file.ffp>
@@ -18,9 +19,14 @@ For example:
 ffp myscript.ffp
 ```
 
+### Run Code
+To run code directly in the terminal, you can use the following command:
+```textmate
+ffp --code "<your code>"
+```
 ### Help Command
 
-To display the help message, use:
+To display the help message, use any of the following commands:
 ```textmate
 ffp --help
 ffp -help
@@ -36,7 +42,7 @@ FROM, TO, AS, DO, CONTAINS, MATCHES, REPLACE, PRINT, JOIN,
 TRIM, UPPERCASE, LOWERCASE, SUBSTRING, SORT, LENGTH, THEN, SLEEP,
 IN, EQUALS, NOT, ELSE, COMMA, REVERSE, NUMBER, STRING, ARRAY.
 ```
-
+It is highly recommended to use the official VS Code extension, which provides snippets for all of the commands, so you can learn the syntax.
 
 ## Comments
 
@@ -53,13 +59,35 @@ SET x TO "Hello"
 ### Data Types
 FFP only consists of 3 data types: `STRING`, `NUMBER`, `ARRAY`.
 It only supports integer arithmetic, no floating point numbers or silly decimals.
+Strings are defined with either double quotes or single quotes. 
+There is no quote escaping yet (\"), but that is on the roadmap.
+
+### Arrays
+You can slice arrays by using the SUBSTRING keyword, like this:
+```textmate
+PRINT SUBSTRING [1, 2, 3, 4] FROM 0 TO 2 #prints [1, 2]
+```
+Optionally, you can append items to the end of your arrays by using the APPEND keyword, like so:
+```textmate
+SET x TO []
+APPEND 1 TO x
+PRINT x #prints [1]
+```
 
 ### CAST
 
 Casting data types in FFP are written as follows:
 ```textmate
 SET x TO "10"
-PRINT x AS NUMBER
+PRINT x AS NUMBER   # prints 10
+PRINT x AS ARRAY    # prints ["1", "0"]
+PRINT 10 AS STRING  # prints "10"
+```
+
+You can cast strings to arrays and arrays to strings, like this:
+```textmate
+PRINT ["a", "b", "c"] AS STRING #prints "abc"
+PRINT "abc" AS ARRAY #prints ["a", "b", "c"]
 ```
 
 ### IF/ELSE
