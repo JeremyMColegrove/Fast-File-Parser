@@ -1,7 +1,7 @@
 package ast;
 
 public class SetNode implements INode {
-    private IdentifierNode variable;
+    private INode variable;
     private INode value;
 
     @Override
@@ -9,13 +9,13 @@ public class SetNode implements INode {
         return "SET " + variable.toString() + " TO " + value.toString();
     }
 
-    public IdentifierNode getVariable() {
+    public INode getVariable() {
         return variable;
     }
     public INode getValue() {
         return value;
     }
-    public SetNode(IdentifierNode variable, INode value) {
+    public SetNode(INode variable, INode value) {
         this.variable = variable;
         this.value = value;
     }

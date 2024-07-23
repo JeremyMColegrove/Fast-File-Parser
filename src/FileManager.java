@@ -1,6 +1,7 @@
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class FileManager {
     private Map<String, BufferedReader> openReaders = new HashMap<>();
@@ -13,6 +14,9 @@ public class FileManager {
             closeFile(filePath);
             File file = new File(filePath);
             if ("r".equals(mode)) {
+                if (!file.exists()) {
+                    throw new FileNotFoundException(filePath);
+                }
                 if (!file.canRead()) {
                     throw new RuntimeException("Can not read file '" + filePath + "', permission denied.");
                 }
@@ -79,10 +83,12 @@ public class FileManager {
     }
 
     public void closeAllFiles() throws IOException {
-        for (String filePath : openReaders.keySet()) {
+        Set<String> readers = openReaders.keySet();
+        for (String filePath : readers) {
             closeFile(filePath);
         }
-        for (String filePath : openWriters.keySet()) {
+        Set<String> writers = openWriters.keySet();
+        for (String filePath : writers) {
             closeFile(filePath);
         }
     }

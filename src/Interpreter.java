@@ -1,29 +1,34 @@
 import ast.*;
-import token.TokenType;
-
+import core.Page;
+import core.Pointer;
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.util.*;
 import java.util.regex.Pattern;
 
 public class Interpreter {
-    private Map<String, Object> symbolTable = new HashMap<>();
-    FileManager fileManager = new FileManager();
 
-    public void execute(ProgramNode program) {
+    private boolean AUTONEWLINE = false;
+    private final Page internalPage = new Page();
+    private final Page publicPage = new Page();
+    final FileManager fileManager = new FileManager();
+
+    public Interpreter() {}
+    public Interpreter(boolean autoNewLine) {
+        AUTONEWLINE = autoNewLine;
+    }
+
+    public void execute(ProgramNode program) throws IOException {
         // open the files before reading or writing to them
         for (INode statement : program.getStatements()) {
             executeStatement(statement);
         }
-        try {
-            // close all files
-            fileManager.closeAllFiles();
-        } catch (Exception e) {
-            throw new RuntimeException(e.getLocalizedMessage());
-        }
 
+        // close all files
+        fileManager.closeAllFiles();
     }
 
-    private void executeStatement(INode statement) {
+    private void executeStatement(INode statement) throws IOException {
         if (statement instanceof SetNode) {
             executeSetStatement((SetNode) statement);
         } else if (statement instanceof ReadNode) {
@@ -42,9 +47,27 @@ public class Interpreter {
             executePrintStatement((PrintNode) statement);
         } else if (statement instanceof SplitNode) {
             executeSplitStatement((SplitNode) statement);
-        }else {
-            throw new RuntimeException("Unexpected statement type: " + statement.getClass().getSimpleName());
+        } else if (statement instanceof SortNode) {
+            executeSortStatement((SortNode) statement);
+        } else {
+            evaluateExpression(statement);
         }
+    }
+
+    private Object executeSortStatement(SortNode statement) {
+        // sort the value of it or something
+        Object value = resolvePointers(evaluateExpression(((SortNode) statement).getValue()));
+        if (value instanceof ArrayList) {
+            // sort array
+            Collections.sort((ArrayList)value);
+            return value;
+        } else if (value instanceof String) {
+            // sort string
+            char[] chars = ((String) value).toCharArray();
+            Arrays.sort(chars);
+            return new String(chars);
+        }
+        throw new RuntimeException("Can only reverse STRING and ARRAY.");
     }
 
     private void executeSplitStatement(SplitNode statement) {
@@ -58,38 +81,82 @@ public class Interpreter {
         for (String word : split) {
             words.add(word);
         }
-        symbolTable.put(statement.getTarget().getName(), words);
+
+        Object target = getVariableNameOrEvaluate(statement.getTarget());
+        setPublicVariable(target, words);
+    }
+
+    /**
+     * Used to retrieve the value of a variable for reading
+     * @param variable
+     * @return Object
+     */
+    private Object getVariableOrEvaluate(INode variable) {
+        if (variable instanceof IdentifierNode) {
+            return getVariable(((IdentifierNode) variable).getName());
+        }
+        return evaluateExpression(variable);
+    }
+
+    /**
+     * Used for retrieving a variable name or type to write to.
+     * @param variable
+     * @return Object
+     */
+    private Object getVariableNameOrEvaluate(INode variable) {
+        if (variable instanceof IdentifierNode) {
+            return ((IdentifierNode) variable).getName();
+        }
+        return evaluateExpression(variable);
     }
 
     private void executeSetStatement(SetNode statement) {
-        String variableName = statement.getVariable().getName();
-        Object value = evaluateExpression(statement.getValue());
-        symbolTable.put(variableName, value);
+        Object variableName = statement.getVariable();
+        if (variableName instanceof IndexNode) {
+            variableName = evaluateExpression((IndexNode)variableName);
+        } else if (variableName instanceof IdentifierNode) {
+            variableName = ((IdentifierNode) variableName).getName();
+        }
+        Object value = evaluateExpression(statement.getValue());    // str num or ptr
+        setPublicVariable(variableName, value);
     }
 
-    private void executeReadStatement(ReadNode statement) {
+    private void executeReadStatement(ReadNode statement) throws IOException {
         String filename = (String) evaluateExpression(statement.getFilename());
         // Here you would read the file contents into a variable
         // For simplicity, let's assume it reads the file and returns its contents as a string
-        try {
-            String fileContents = readFile(filename);
-            symbolTable.put(statement.getVariable().getName(), fileContents);
-        } catch (Exception e) {
-            throw new RuntimeException(e.getLocalizedMessage());
+
+        String fileContents = readFile(filename);
+        Object variable;
+        if (statement.getVariable() instanceof IdentifierNode) {
+            variable = ((IdentifierNode) statement.getVariable()).getName();
+        } else {
+            variable = resolvePointers(evaluateExpression(statement.getVariable()));
         }
+        setPublicVariable(variable, fileContents);
     }
 
     private void executePrintStatement(PrintNode statement) {
         Object value = evaluateExpression(statement.getVariable());
-        System.out.println(value);
+        value = resolvePointers(value);
+        if (AUTONEWLINE) {
+            System.out.println(value.toString());
+        } else {
+            System.out.printf(value.toString());
+        }
+
     }
 
     private void executeWriteStatement(WriteNode statement) {
         Object value = evaluateExpression(statement.getContent());
         String filename = (String) evaluateExpression(statement.getFilename());
         try {
+            String output = value.toString();
+            if (AUTONEWLINE) {
+                output += "\n";
+            }
             // Here you would write the value to the file
-            writeFile(filename, value.toString(), false);
+            writeFile(filename, output, false);
         } catch (Exception e) {
             throw new RuntimeException(e.getLocalizedMessage());
         }
@@ -100,52 +167,69 @@ public class Interpreter {
         Object value = evaluateExpression(statement.getContent());
         String filename = (String) evaluateExpression(statement.getFilename());
         try {
+            String output = value.toString();
+            if (AUTONEWLINE) {
+                output += "\n";
+            }
             // Here you would append the value to the file
-            writeFile(filename, value.toString(), true);
+            writeFile(filename, output, true);
         } catch (Exception e) {
             throw new RuntimeException(e.getLocalizedMessage());
         }
     }
 
-    private void executeIteratorStatement(IteratorNode statement) {
-        Object value = evaluateExpression(statement.getIterator());
-        // check if can iterate
+    private void executeIteratorStatement(IteratorNode statement) throws IOException {
+        // evaluates to either the pointer location or string of variable
+        Object target = resolvePointers(getVariableOrEvaluate(statement.getIterator()));
+
         Iterator iterator;
-        if (value instanceof String) {
+        if (target instanceof String) {
             ArrayList letters = new ArrayList();
-            for (Character letter : value.toString().toCharArray()) {
-                letters.add(new StringLiteralNode(letter.toString()));
+            for (Character letter : target.toString().toCharArray()) {
+                letters.add(letter.toString());
             }
-            value = letters;
+            target = letters;
         }
-        if (value instanceof ArrayList<?>) {
-            iterator = ((ArrayList<?>) value).iterator();
+        if (target instanceof ArrayList<?>) {
+            iterator = ((ArrayList<?>) target).iterator();
         } else {
-            throw new RuntimeException("Can not iterate over " + value.getClass());
+            throw new RuntimeException("Can not iterate over " + target.getClass());
         }
 
-        // iterate over it
+        // Make sure iterator loops assign loop variable only to variable (cannot do FOR x[0] IN [1, 2, 3] DO)
+        Object variable = statement.getVariable();
+        if (!(variable instanceof IdentifierNode)) {
+            throw new InvalidObjectException("Can assign iterator loop value outside of a variable.");
+        }
+        String name = ((IdentifierNode) variable).getName();
+        // iterate over the iterator and assign local var
         for (Iterator it = iterator; it.hasNext(); ) {
             Object item = it.next();
-            symbolTable.put(statement.getVariable().getName(), item);
+            setPublicVariable(name, item);
             for (INode bodyStatement : statement.getBody()) {
                 executeStatement(bodyStatement);
             }
         }
     }
 
-    private void executeForStatement(ForNode statement) {
+    private void executeForStatement(ForNode statement) throws IOException {
         int start = (int) evaluateExpression(statement.getStart());
         int end = (int) evaluateExpression(statement.getEnd());
+        // Make sure iterator loops assign loop variable only to variable (cannot do FOR x[0] IN [1, 2, 3] DO)
+        Object variable = statement.getVariable();
+        if (!(variable instanceof IdentifierNode)) {
+            throw new InvalidObjectException("Can not assign for loop value outside of a variable.");
+        }
+        String name = ((IdentifierNode) variable).getName();
         for (int i = start; i < end; i++) {
-            symbolTable.put(statement.getVariable().getName(), i);
+            setPublicVariable(name, i);
             for (INode bodyStatement : statement.getBody()) {
                 executeStatement(bodyStatement);
             }
         }
     }
 
-    private void executeIfStatement(IfNode statement) {
+    private void executeIfStatement(IfNode statement) throws IOException {
         Object expression = evaluateExpression(statement.getCondition());
 
         Boolean valid = expression instanceof Boolean || expression instanceof Integer;
@@ -167,10 +251,13 @@ public class Interpreter {
     private Object evaluateExpression(INode expression) {
         if (expression instanceof IdentifierNode) {
             String variableName = ((IdentifierNode) expression).getName();
-            if (!symbolTable.containsKey(variableName)) {
+            Object value = getVariable(variableName);
+            if (value == null) {
                 throw new RuntimeException("Undeclared variable: " + variableName);
             }
-            return symbolTable.get(variableName);
+            return value;
+        } else if (expression instanceof Pointer) {
+
         } else if (expression instanceof NotNode) {
           Object value = evaluateExpression(((NotNode) expression).getValue());
           if (value instanceof Boolean) {
@@ -178,69 +265,34 @@ public class Interpreter {
           }
           throw new RuntimeException("Can not apply NOT to " + value.getClass());
         } else if (expression instanceof IndexNode) {
-            Object value = evaluateExpression(((IndexNode) expression).getValue());
+            Object variable = evaluateExpression(((IndexNode) expression).getValue());
             Object index = evaluateExpression(((IndexNode) expression).getIndex());
-            // check if we can access it
-            if (index instanceof Integer) {
-                Integer i = (Integer) index;
-                try {
-                    if (value instanceof ArrayList<?>) {
-                        return ((ArrayList<?>) value).get(i);
-                    } else if (value instanceof String) {
-                        return String.valueOf(((String) value).toCharArray()[i]);
-                    }
-                } catch (IndexOutOfBoundsException e) {
-                    throw new RuntimeException("Index "+i+" out of bounds");
-                } catch (Exception e){
-                    throw new RuntimeException(e.getLocalizedMessage());
-                }
+            if (variable instanceof String) {
+//                return getVariable(variable);
+                return new Pointer(publicPage, variable, (Integer)index);
+            } else if (variable instanceof Pointer) {
+                // try to ge the value of the pointer, and index it at the index spot
+                Object value = getVariable(variable);
+                // try to index the variable
+                ArrayList array = (ArrayList) value;
+                return array.get((Integer)index);
             }
-            throw new RuntimeException("Can not index " + value.toString() + " at position ");
         } else if (expression instanceof AsNode) {
             AsNode as = (AsNode) expression;
-            Object value = evaluateExpression(as.getValue());
+            Object value = resolvePointers(evaluateExpression(as.getValue()));
             try {
-                if (as.getCast() == TokenType.NUMBER) {
-                    // try and convert whatever the object is as a number
-                    // can only convert string to number
-                    if (value instanceof String) {
-                        return Integer.parseInt((String)value);
-                    } else if (value instanceof Number) {
-                        return value;
-                    } else {
-                        throw new NumberFormatException();
-                    }
-                } else if (as.getCast() == TokenType.STRING) {
-                    if (value instanceof Number) {
-                        return String.valueOf(value);
-                    }  else if (value instanceof ArrayList<?>) {
-                        // try and combine all of the
-                        StringBuilder builder = new StringBuilder();
-                        for (Object node : (ArrayList<?>)value) {
-                            // check to make sure the node is string_literal
-                            builder.append(String.valueOf(node));
-                        }
-                        return builder.toString();
-                    } else if (value instanceof String) {
-                        return value;
-                    }
-                    throw new RuntimeException();
-                } else if (as.getCast() == TokenType.ARRAY) {
-                    if (value instanceof String) {
-                        // convert "hello" to ["h", "e", "l", "l", "o"]
-                        char[] chars = ((String) value).toCharArray();
-                        ArrayList<Object> res = new ArrayList<>();
-                        for (char c : chars) {
-                            res.add(String.valueOf(c));
-                        }
-                        return res;
-                    } else if (value instanceof ArrayList<?>) {
-                        return value;
-                    }
-                    throw new RuntimeException();
+                switch (as.getCast()) {
+                    case NUMBER:
+                        return Expressions.castToNumber(value);
+                    case STRING:
+                        return Expressions.castToString(value);
+                    case ARRAY:
+                        return Expressions.castToArray(value);
+                    default:
+                        throw new RuntimeException("Unsupported cast type: " + as.getCast());
                 }
             } catch (Exception e) {
-                throw new RuntimeException("Could not parse \""+value.toString()+"\" to " + as.getCast().name() + ": " + e.getLocalizedMessage());
+                throw new RuntimeException("Could not parse \"" + value.toString() + "\" to " + as.getCast().name() + ": " + e.getLocalizedMessage(), e);
             }
         }
         else if (expression instanceof StringLiteralNode) {
@@ -274,38 +326,11 @@ public class Interpreter {
             }
             return node.toString().trim();
         } else if (expression instanceof SortNode) {
-            Object value = evaluateExpression(((SortNode) expression).getValue());
-            if (value instanceof ArrayList<?>) {
-                // reverse array
-                ((ArrayList)value).sort(new Comparator() {
-                    @Override
-                    public int compare(Object o1, Object o2) {
-                        // create and execute new compare node
-                        INode greater = new BinaryOperationNode((INode) o1, ">", (INode) o2);
-                        Boolean greater_result = (Boolean) evaluateExpression(greater);
-                        INode equals = new BinaryOperationNode((INode) o1, "EQUALS", (INode) o2);
-                        Boolean equals_result = (Boolean) evaluateExpression(equals);
-                        if (greater_result) {
-                            return 1;
-                        } else if (equals_result) {
-                            return 0;
-                        } else {
-                            return -1;
-                        }
-                    }
-                });
-                return value;
-            } else if (value instanceof String) {
-                // sort string
-                 char[] chars = ((String) value).toCharArray();
-                Arrays.sort(chars);
-                return new String(chars);
-            }
-            throw new RuntimeException("Can only reverse STRING and ARRAY.");
+            return executeSortStatement((SortNode) expression);
             // check if instance of array
 
         } else if (expression instanceof ReverseNode) {
-            Object value = evaluateExpression(((ReverseNode) expression).getValue());
+            Object value = resolvePointers(evaluateExpression(((ReverseNode) expression).getValue()));
             // check if value is array
             if (value instanceof String) {
                 // return reverse of string
@@ -318,7 +343,7 @@ public class Interpreter {
             }
             throw new RuntimeException("Can only reverse STRING and ARRAY.");
         } else if (expression instanceof SubstringNode) {
-            Object variable = evaluateExpression(((SubstringNode) expression).getVariable());
+            Object variable = resolvePointers(evaluateExpression(((SubstringNode) expression).getVariable()));
             Object start = evaluateExpression(((SubstringNode) expression).getStart());
             Object end = evaluateExpression(((SubstringNode) expression).getEnd());
 
@@ -339,8 +364,8 @@ public class Interpreter {
             throw new RuntimeException("Can only substring STRING and ARRAY.");
         } else if (expression instanceof BinaryOperationNode) {
             BinaryOperationNode binaryOp = (BinaryOperationNode) expression;
-            Object left = evaluateExpression(binaryOp.getLeft());
-            Object right = evaluateExpression(binaryOp.getRight());
+            Object left = resolvePointers(evaluateExpression(binaryOp.getLeft()));
+            Object right = resolvePointers(evaluateExpression(binaryOp.getRight()));
             // we can assume all is the same for everything but string and regex
             switch (binaryOp.getOperator()) {
                 case "EQUALS":
@@ -352,7 +377,10 @@ public class Interpreter {
                 case "<":
                     return (Integer) left < (Integer) right;
                 case "+":
-                    return left instanceof String && right instanceof String ? (String) left + right : (Integer) left + (Integer) right;
+                    if (left instanceof  String) {
+                        return left + String.valueOf(right);
+                    }
+                    return (Integer)left + (Integer) right;
                 case "-":
                     return (Integer) left - (Integer) right;
                 case "*":
@@ -374,7 +402,7 @@ public class Interpreter {
             }
             throw new RuntimeException("Can not apply - to " + value.getClass());
         } else if (expression instanceof LengthNode) {
-            Object inner = evaluateExpression(((LengthNode) expression).getVariable());
+            Object inner = resolvePointers(evaluateExpression(((LengthNode) expression).getVariable()));
             if (inner instanceof String) {
                 return ((String) inner).length();
             } else if (inner instanceof List) {
@@ -401,4 +429,61 @@ public class Interpreter {
         }
     }
 
+    // only pointers are used with the system table, we don't provide support for user pointers (Although this could be on the roadmap)
+    private void setPublicVariable(Object location, Object value) {
+        // check if value is an array
+        if (value instanceof ArrayList) {
+            // add array to internal page so user can't access and we are pointer based
+            value = internalPage.insert(value);
+        }
+
+        if (location instanceof Pointer) {
+            // find this location
+            Pointer p = (Pointer) location;
+            if (p.getOffset() != null) {
+                Object entry = p.getPage().get(p);
+                if (entry instanceof ArrayList) {
+                    // replace index at offset with value
+                    ArrayList array = (ArrayList<Object>) entry;
+                    array.set(p.getOffset(), value);
+                    value = array;
+                } else {
+                    throw new RuntimeException("Can not index into " + entry.getClass());
+                }
+            }
+            if (p.getLocation() instanceof Pointer) {
+                // recursively follow the ptr to the right path, and then set that variable
+                setPublicVariable(p.getLocation(), value);
+            } else {
+                internalPage.insert((String)p.getLocation(), value);
+            }
+            // set/update the entry
+        } else if (location instanceof String) {
+            publicPage.insert((String)location, value);
+        }
+    }
+    private Object resolvePointers(Object value) {
+        if (value instanceof ArrayList) {
+            ArrayList array = new ArrayList(List.copyOf((ArrayList) value));
+            for (int i=0; i<array.size(); i++) {
+                array.set(i, resolvePointers(array.get(i)));
+            }
+            return array;
+        } else if (value instanceof Pointer) {
+            Pointer p = (Pointer) value;
+            return resolvePointers(((Pointer) value).getPage().getWithOffset(p));
+        }
+        return value;
+    }
+
+    private Object getVariable(Object location) {
+        if (location instanceof Pointer) {
+            Pointer pointer = (Pointer) location;
+            // lookup the item
+            return pointer.getPage().get(pointer);
+        } else if (location instanceof String) {
+            return publicPage.get((String)location);
+        }
+        throw new RuntimeException("Can not access page with class " + location.getClass());
+    }
 }
