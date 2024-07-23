@@ -1,7 +1,7 @@
 # FFP Programming Language
 
 FFP is a programming language designed to read like natural language, similar to SQL, and is primarily used for processing and parsing files. 
-It is implemented in Java and distributed as a .jar file.
+It is implemented in Java and distributed as an installable .exe file.
 
 ## Usage
 
@@ -23,6 +23,8 @@ ffp myscript.ffp
 To display the help message, use:
 ```textmate
 ffp --help
+ffp -help
+ffp
 ```
 
 ## Keywords
@@ -31,7 +33,7 @@ FFP supports the following keywords:
 ```textmate
 SET, READ, WRITE, APPEND, FOR, ENDFOR, SPLIT, BY, IF, ENDIF,
 FROM, TO, AS, DO, CONTAINS, MATCHES, REPLACE, PRINT, JOIN,
-TRIM, UPPERCASE, LOWERCASE, SUBSTRING, SORT, LENGTH, THEN,
+TRIM, UPPERCASE, LOWERCASE, SUBSTRING, SORT, LENGTH, THEN, SLEEP,
 IN, EQUALS, NOT, ELSE, COMMA, REVERSE, NUMBER, STRING, ARRAY.
 ```
 
@@ -119,7 +121,13 @@ FOR i FROM 0 TO 10 DO
     PRINT i
 ENDFOR
 ```
+### SLEEP
 
+To make the program sleep by a certain number of milliseconds:
+
+```textmate
+SLEEP 3000 #ms
+```
 ### SPLIT
 
 To split a string by a delimiter:

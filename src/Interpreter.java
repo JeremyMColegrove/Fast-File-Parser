@@ -49,8 +49,20 @@ public class Interpreter {
             executeSplitStatement((SplitNode) statement);
         } else if (statement instanceof SortNode) {
             executeSortStatement((SortNode) statement);
-        } else {
+        } else if (statement instanceof SleepNode) {
+            executeSleepStatement((SleepNode) statement);
+        }else {
             evaluateExpression(statement);
+        }
+    }
+
+    private void executeSleepStatement(SleepNode node) {
+        Object value = resolvePointers(evaluateExpression(node.getValue()));
+        // sleep now
+        try {
+            Thread.sleep((Integer)value);
+        } catch (Exception e) {
+            throw new RuntimeException(e.getLocalizedMessage());
         }
     }
 
@@ -71,8 +83,8 @@ public class Interpreter {
     }
 
     private void executeSplitStatement(SplitNode statement) {
-        Object left = evaluateExpression(statement.getVariable());
-        Object delimiter = evaluateExpression(statement.getDelimiter());
+        Object left = resolvePointers(evaluateExpression(statement.getVariable()));
+        Object delimiter = resolvePointers(evaluateExpression(statement.getDelimiter()));
         if (!(left instanceof String || delimiter instanceof String)) {
             throw new RuntimeException("Can only split strings.");
         }
@@ -111,18 +123,23 @@ public class Interpreter {
     }
 
     private void executeSetStatement(SetNode statement) {
-        Object variableName = statement.getVariable();
-        if (variableName instanceof IndexNode) {
-            variableName = evaluateExpression((IndexNode)variableName);
-        } else if (variableName instanceof IdentifierNode) {
-            variableName = ((IdentifierNode) variableName).getName();
+        // Get the variable name
+        Object variable = statement.getVariable();
+        // if variable is an index, evaluate the index (gets pointer)
+        if (variable instanceof IndexNode) {
+            variable = evaluateExpression((IndexNode)variable);
+        } else if (variable instanceof IdentifierNode) {
+            variable = ((IdentifierNode) variable).getName();
         }
-        Object value = evaluateExpression(statement.getValue());    // str num or ptr
-        setPublicVariable(variableName, value);
+        // recursively resolve pointers, to make a deep copy rather than share references
+        Object value = resolvePointers(evaluateExpression(statement.getValue()), true);
+        setPublicVariable(variable, value);
     }
 
+
+
     private void executeReadStatement(ReadNode statement) throws IOException {
-        String filename = (String) evaluateExpression(statement.getFilename());
+        String filename = (String) resolvePointers(evaluateExpression(statement.getFilename()));
         // Here you would read the file contents into a variable
         // For simplicity, let's assume it reads the file and returns its contents as a string
 
@@ -148,8 +165,8 @@ public class Interpreter {
     }
 
     private void executeWriteStatement(WriteNode statement) {
-        Object value = evaluateExpression(statement.getContent());
-        String filename = (String) evaluateExpression(statement.getFilename());
+        Object value = resolvePointers(evaluateExpression(statement.getContent()));
+        String filename = (String) resolvePointers(evaluateExpression(statement.getFilename()));
         try {
             String output = value.toString();
             if (AUTONEWLINE) {
@@ -164,15 +181,28 @@ public class Interpreter {
     }
 
     private void executeAppendStatement(AppendNode statement) {
-        Object value = evaluateExpression(statement.getContent());
-        String filename = (String) evaluateExpression(statement.getFilename());
+        // get a deep copy of whatever value
+        Object value = resolvePointers(evaluateExpression(statement.getContent()), true);
+
+        // the pointer location we will be inserting it into
+        Object name = evaluateExpression(statement.getFilename());
+
+        // shallow copy of the item we will be modifying (to not remove references)
+        Object target = resolvePointers(name, false);
         try {
-            String output = value.toString();
-            if (AUTONEWLINE) {
-                output += "\n";
+            if (target instanceof String) {
+                    String output = value.toString();
+                    if (AUTONEWLINE) {
+                        output += "\n";
+                    }
+                    // Here you would append the value to the file
+                    writeFile((String)target, output, true);
+            } else if (target instanceof ArrayList) {
+                // okay, lets append the two together
+                ArrayList array = (ArrayList) target;
+                array.add(value);
+                updatePointer((Pointer)name, array);
             }
-            // Here you would append the value to the file
-            writeFile(filename, output, true);
         } catch (Exception e) {
             throw new RuntimeException(e.getLocalizedMessage());
         }
@@ -213,8 +243,8 @@ public class Interpreter {
     }
 
     private void executeForStatement(ForNode statement) throws IOException {
-        int start = (int) evaluateExpression(statement.getStart());
-        int end = (int) evaluateExpression(statement.getEnd());
+        int start = (int) resolvePointers(evaluateExpression(statement.getStart()));
+        int end = (int) resolvePointers(evaluateExpression(statement.getEnd()));
         // Make sure iterator loops assign loop variable only to variable (cannot do FOR x[0] IN [1, 2, 3] DO)
         Object variable = statement.getVariable();
         if (!(variable instanceof IdentifierNode)) {
@@ -230,7 +260,7 @@ public class Interpreter {
     }
 
     private void executeIfStatement(IfNode statement) throws IOException {
-        Object expression = evaluateExpression(statement.getCondition());
+        Object expression = resolvePointers(evaluateExpression(statement.getCondition()));
 
         Boolean valid = expression instanceof Boolean || expression instanceof Integer;
         if (!valid) {
@@ -256,26 +286,21 @@ public class Interpreter {
                 throw new RuntimeException("Undeclared variable: " + variableName);
             }
             return value;
-        } else if (expression instanceof Pointer) {
-
         } else if (expression instanceof NotNode) {
-          Object value = evaluateExpression(((NotNode) expression).getValue());
+          Object value = resolvePointers(evaluateExpression(((NotNode) expression).getValue()));
           if (value instanceof Boolean) {
             return !(Boolean)value;
           }
           throw new RuntimeException("Can not apply NOT to " + value.getClass());
         } else if (expression instanceof IndexNode) {
+
             Object variable = evaluateExpression(((IndexNode) expression).getValue());
             Object index = evaluateExpression(((IndexNode) expression).getIndex());
             if (variable instanceof String) {
-//                return getVariable(variable);
                 return new Pointer(publicPage, variable, (Integer)index);
             } else if (variable instanceof Pointer) {
-                // try to ge the value of the pointer, and index it at the index spot
-                Object value = getVariable(variable);
-                // try to index the variable
-                ArrayList array = (ArrayList) value;
-                return array.get((Integer)index);
+                // return a new pointer indexing into this pointer
+                return new Pointer(((Pointer) variable).getPage(), variable, (Integer)index);
             }
         } else if (expression instanceof AsNode) {
             AsNode as = (AsNode) expression;
@@ -303,24 +328,24 @@ public class Interpreter {
             return ((RegexLiteralNode) expression).getRegex();
         } else if (expression instanceof ArrayLiteralNode) {
             ArrayList values = new ArrayList();
-            for (INode node: ((ArrayList<INode>)((ArrayLiteralNode) expression).getArray())) {
+            for (INode node: (((ArrayLiteralNode) expression).getArray())) {
                 values.add(evaluateExpression(node));
             }
             return values;
         }  else if (expression instanceof UppercaseNode) {
-            Object node = evaluateExpression(((UppercaseNode) expression).getValue());
+            Object node = resolvePointers(evaluateExpression(((UppercaseNode) expression).getValue()));
             if (!(node instanceof String)) {
                 throw new RuntimeException("Can only apply UPPERCASE to STRINGS");
             }
             return node.toString().toUpperCase();
         } else if (expression instanceof LowercaseNode) {
-            Object node = evaluateExpression(((LowercaseNode) expression).getValue());
+            Object node = resolvePointers(evaluateExpression(((LowercaseNode) expression).getValue()));
             if (!(node instanceof String)) {
                 throw new RuntimeException("Can only apply LOWERCASE to STRINGS");
             }
             return node.toString().toLowerCase();
         }else if (expression instanceof TrimNode) {
-            Object node = evaluateExpression(((TrimNode) expression).getValue());
+            Object node = resolvePointers(evaluateExpression(((TrimNode) expression).getValue()));
             if (!(node instanceof String)) {
                 throw new RuntimeException("Can only apply TRIM to STRINGS");
             }
@@ -344,8 +369,8 @@ public class Interpreter {
             throw new RuntimeException("Can only reverse STRING and ARRAY.");
         } else if (expression instanceof SubstringNode) {
             Object variable = resolvePointers(evaluateExpression(((SubstringNode) expression).getVariable()));
-            Object start = evaluateExpression(((SubstringNode) expression).getStart());
-            Object end = evaluateExpression(((SubstringNode) expression).getEnd());
+            Object start = resolvePointers(evaluateExpression(((SubstringNode) expression).getStart()));
+            Object end = resolvePointers(evaluateExpression(((SubstringNode) expression).getEnd()));
 
             // make sure start and end are number
             if (!(start instanceof Integer)) {
@@ -371,7 +396,7 @@ public class Interpreter {
                 case "EQUALS":
                     return left instanceof String && right instanceof String ? left.equals(right) : left == right;
                 case "MATCHES":
-                    return ((Pattern) right).matcher((String) left).find();
+                    return ((Pattern) right).matcher(String.valueOf(left)).find();
                 case ">":
                     return (Integer) left > (Integer) right;
                 case "<":
@@ -415,6 +440,8 @@ public class Interpreter {
 
     }
 
+
+
     private String readFile(String filename) throws IOException {
         // Implement file reading logic here
         return fileManager.readFile(filename);
@@ -429,6 +456,32 @@ public class Interpreter {
         }
     }
 
+    private void updatePointer(Pointer pointer, Object value) {
+        pointer = resolvePointerLocation(pointer);
+        // get the value of the object at pointer location, update it with the value, and then place it into the same spot
+        pointer.getPage().update(pointer, value);
+    }
+
+    /**
+     * This function took me forever to make. Basically collapses embedded pointers, and provides one pointer pointing to the final destination.
+     * @param p
+     * @return
+     */
+    private Pointer resolvePointerLocation(Pointer p) {
+        if (!(p.getLocation() instanceof Pointer)) {
+            return p;
+        }
+        Pointer nextLocation = resolvePointerLocation((Pointer)p.getLocation());
+        // index the next location
+        if (nextLocation.getOffset() != null) {
+            // get the stuff at the next location
+            ArrayList array = (ArrayList) nextLocation.getPage().get((String)nextLocation.getLocation());
+            Pointer item = (Pointer)array.get(nextLocation.getOffset());
+            nextLocation = item;
+        }
+        return new Pointer(nextLocation.getPage(), nextLocation.getLocation(), p.getOffset());
+    }
+
     // only pointers are used with the system table, we don't provide support for user pointers (Although this could be on the roadmap)
     private void setPublicVariable(Object location, Object value) {
         // check if value is an array
@@ -439,7 +492,8 @@ public class Interpreter {
 
         if (location instanceof Pointer) {
             // find this location
-            Pointer p = (Pointer) location;
+            Pointer p = resolvePointerLocation((Pointer) location);
+
             if (p.getOffset() != null) {
                 Object entry = p.getPage().get(p);
                 if (entry instanceof ArrayList) {
@@ -447,31 +501,30 @@ public class Interpreter {
                     ArrayList array = (ArrayList<Object>) entry;
                     array.set(p.getOffset(), value);
                     value = array;
-                } else {
-                    throw new RuntimeException("Can not index into " + entry.getClass());
                 }
             }
-            if (p.getLocation() instanceof Pointer) {
-                // recursively follow the ptr to the right path, and then set that variable
-                setPublicVariable(p.getLocation(), value);
-            } else {
-                internalPage.insert((String)p.getLocation(), value);
-            }
+            internalPage.insert((String)p.getLocation(), value);
             // set/update the entry
         } else if (location instanceof String) {
             publicPage.insert((String)location, value);
         }
     }
+
     private Object resolvePointers(Object value) {
+        return resolvePointers(value, true);
+    }
+    private Object resolvePointers(Object value, boolean recursive) {
         if (value instanceof ArrayList) {
             ArrayList array = new ArrayList(List.copyOf((ArrayList) value));
-            for (int i=0; i<array.size(); i++) {
-                array.set(i, resolvePointers(array.get(i)));
+            if (recursive) {
+                for (int i = 0; i < array.size(); i++) {
+                    array.set(i, resolvePointers(array.get(i)));
+                }
             }
             return array;
         } else if (value instanceof Pointer) {
-            Pointer p = (Pointer) value;
-            return resolvePointers(((Pointer) value).getPage().getWithOffset(p));
+            Pointer pointer = resolvePointerLocation((Pointer) value);
+            return resolvePointers(pointer.getPage().getWithOffset(pointer), recursive);
         }
         return value;
     }

@@ -9,43 +9,46 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 
 public class FFP {
     public static void main(String args[]) throws IOException {
-        if (args.length == 0 || args[0] == null || args[0].equals("--help") || args[0].equals("-help")) {
+        // CHECK ARGUMENTS
+        if (args.length == 0 ||  args[0].equals("--help") || args[0].equals("-help")) {
             showHelp();
             exit();
         }
-        String path = args[0];
-        // get code
-        String code = Files.readString(Path.of(path), StandardCharsets.UTF_8);
-        // pre process
+
+        // READ CODE
+        String code = Files.readString(Path.of(args[0]), StandardCharsets.UTF_8);
+
+        // PRE PROCESS
         PreProcessor processor = new PreProcessor();
         code = processor.process(code);
-        // lexer phase
+
+        // LEXICAL ANALYSIS
         Lexer lexer = new Lexer(code);
         List<Token> tokens = lexer.tokenize();
         // print tokens if requested
-        if (processor.SHOWTOKENS) {
+        if (processor.PRINTTOKENS) {
             for (Token token: tokens) {
                 System.out.printf("%-15s: %s%n", token.type, token.value);
             }
         }
-        // syntax parsing
+
+        // SYNTAX PARSING
         Parser parser = new Parser(tokens);
         ProgramNode tree = parser.parse();
         // print syntax tree if requested
-        if (processor.SHOWTREE) {
+        if (processor.PRINTTREE) {
             System.out.println(tree);
         }
-        // interpreter
+
+        // INTERPRET
         Interpreter interpreter = new Interpreter(processor.AUTONEWLINE);
-        // execute!
         interpreter.execute(tree);
-        // all done!
+
+        // EXIT
         exit();
     }
 

@@ -60,10 +60,18 @@ public class Parser {
                 return parseSet();
             case PRINT:
                 return parsePrint();
+            case SLEEP:
+                return parseSleep();
             // Handle other statements
             default:
                 throw new RuntimeException("Unexpected token: " + token.getType());
         }
+    }
+
+    private INode parseSleep() {
+        consume(TokenType.SLEEP);
+        INode value = parseExpression();
+        return new SleepNode(value);
     }
 
     private INode parsePrint() {

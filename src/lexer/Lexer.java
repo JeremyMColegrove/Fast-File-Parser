@@ -238,6 +238,9 @@ public class Lexer {
             case "TRIM":
                 addToken(TokenType.TRIM);
                 break;
+            case "SLEEP":
+                addToken(TokenType.SLEEP);
+                break;
             case "UPPERCASE":
                 addToken(TokenType.UPPERCASE);
                 break;

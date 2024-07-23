@@ -7,14 +7,14 @@ import java.util.List;
 public class Page {
     int counter = 0;
     private HashMap<String, Object> table = new HashMap<>(32);
-    public Page() {
 
-    }
 
     public Object getWithOffset(Pointer pointer) {
         Object item = this.get(pointer);
-        if (pointer.getOffset() != null && item instanceof ArrayList) {
-            return ((ArrayList<?>) item).get(pointer.getOffset());
+        if (pointer.getOffset() != null) {
+            if (item instanceof ArrayList) {
+                return ((ArrayList<?>) item).get(pointer.getOffset());
+            }
         }
         return item;
     }
@@ -24,6 +24,21 @@ public class Page {
 
     public Object get(String name) {
         return table.get(name);
+    }
+
+    public void update(Pointer pointer, Object value) {
+        // maybe pointer is with offset, and we need to index that
+        if (pointer.getLocation() instanceof Pointer) {
+            update((Pointer)pointer.getLocation(), value);
+        } else {
+            update((String)pointer.getLocation(), value);
+        }
+    }
+
+    public void update(String name, Object value) {
+        if (table.containsKey(name)) {
+            table.put(name, value);
+        }
     }
 
     public Pointer insert(Object object) {

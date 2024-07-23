@@ -1,8 +1,10 @@
 public class PreProcessor {
     //DIRECTIVE VARIABLES HERE
     public boolean AUTONEWLINE = false;
-    public boolean SHOWTREE = false;
-    public boolean SHOWTOKENS = false;
+    public boolean PRINTTREE = false;
+    public boolean PRINTTOKENS = false;
+
+    public Integer TIMEOUT = -1;
 
     public PreProcessor() {
 
@@ -19,16 +21,20 @@ public class PreProcessor {
             // scan for directives
             if (readingDirectives && line.startsWith("@")) {
                 // read this directive
-                String directive = line.substring(1);
+                String[] words = line.substring(1).split(" ");
+                String directive = words[0];
                 switch (directive) {
                     case "AUTONEWLINE":
                         AUTONEWLINE = true;
                         break;
-                    case "SHOWTREE":
-                        SHOWTREE = true;
+                    case "PRINTTREE":
+                        PRINTTREE = true;
                         break;
-                    case "SHOWTOKENS":
-                        SHOWTOKENS = true;
+                    case "PRINTTOKENS":
+                        PRINTTOKENS = true;
+                        break;
+                    case "TIMEOUT":
+                        TIMEOUT = Integer.parseInt(words[1]);
                         break;
                     default:
                         throw new RuntimeException("Unknown directive " + directive);
