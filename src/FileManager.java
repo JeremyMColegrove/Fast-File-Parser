@@ -1,4 +1,8 @@
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -39,6 +43,20 @@ public class FileManager {
 
             fileModes.put(filePath, mode);
         }
+    }
+
+    public void copyFile(String filePath, String destination) throws IOException {
+        Path sourcePath = Paths.get(filePath); // Replace with your source file path
+        Path targetPath = Paths.get(destination);
+        closeFile(filePath);
+        closeFile(destination);
+        Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    public void deleteFile(String filePath) throws IOException {
+        closeFile(filePath);
+        Path path = Paths.get(filePath);
+        Files.deleteIfExists(path);
     }
 
     public String readFile(String filePath) throws IOException {

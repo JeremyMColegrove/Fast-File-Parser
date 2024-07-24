@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 public class FFP {
@@ -25,7 +26,13 @@ public class FFP {
             code = args[1];
         } else {
             // READ CODE
-            code = Files.readString(Path.of(args[0]), StandardCharsets.UTF_8);
+            Path path = Paths.get(args[0]);
+            List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
+            StringBuilder content = new StringBuilder();
+            for (String line : lines) {
+                content.append(line).append("\n");
+            }
+            code = content.toString();
         }
 
 

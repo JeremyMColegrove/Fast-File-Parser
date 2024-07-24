@@ -1,10 +1,14 @@
 import ast.*;
+import com.sun.org.apache.xpath.internal.operations.Bool;
+import com.sun.xml.internal.ws.policy.spi.AssertionCreationException;
 import core.Page;
 import core.Pointer;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import static core.Page.copyOf;
 
 public class Interpreter {
 
@@ -51,11 +55,36 @@ public class Interpreter {
             executeSortStatement((SortNode) statement);
         } else if (statement instanceof SleepNode) {
             executeSleepStatement((SleepNode) statement);
+        } else if (statement instanceof AssertNode){
+            executeAssertStatement((AssertNode)statement);
+        } else if (statement instanceof DeleteNode) {
+            executeDeleteStatemenet((DeleteNode)statement);
+        } else if (statement instanceof CopyNode) {
+            executeCopyStatement((CopyNode) statement);
         }else {
             evaluateExpression(statement);
         }
     }
 
+    private void executeCopyStatement(CopyNode node) throws IOException {
+        String filename = (String) resolvePointers(evaluateExpression(node.getValue()));
+        String destination = (String) resolvePointers(evaluateExpression(node.getDestination()));
+        fileManager.copyFile(filename, destination);
+    }
+
+    private void executeDeleteStatemenet(DeleteNode node) throws IOException {
+        String filename = (String) resolvePointers(evaluateExpression(node.getValue()));
+        fileManager.deleteFile(filename);
+    }
+
+    private void executeAssertStatement(AssertNode node) {
+        Object value = resolvePointers(evaluateExpression(node.getValue()));
+        if (value instanceof Boolean) {
+            assert (Boolean)value == true;
+        } else {
+            throw new RuntimeException("Can not ASSERT a non-boolean.");
+        }
+    }
     private void executeSleepStatement(SleepNode node) {
         Object value = resolvePointers(evaluateExpression(node.getValue()));
         // sleep now
@@ -367,6 +396,53 @@ public class Interpreter {
                 return result;
             }
             throw new RuntimeException("Can only reverse STRING and ARRAY.");
+        } else if (expression instanceof FindNode) {
+            FindNode node = (FindNode)expression;
+            Pattern regex = (Pattern)resolvePointers(evaluateExpression(node.getRegex()));
+            String value = (String)resolvePointers(evaluateExpression(node.getValue()));
+            List<String> matches = new ArrayList<>();
+            Matcher matcher = regex.matcher(value);
+            while (matcher.find()) {
+                matches.add(matcher.group());
+            }
+            return matches;
+        } else if (expression instanceof ReplaceNode) {
+            ReplaceNode node = (ReplaceNode) expression;
+            Object search = resolvePointers(evaluateExpression(node.getSearch()));
+            String replacement = (String)resolvePointers(evaluateExpression(node.getReplacement()));
+            String target = (String)resolvePointers(evaluateExpression(node.getTarget()));
+            if (search instanceof Pattern) {
+                Pattern pattern = (Pattern) search;
+                Matcher matcher = pattern.matcher(target);
+                if (node.isFirstOnly()) {
+                    return matcher.replaceFirst(replacement);
+
+                } else {
+                    return matcher.replaceAll(replacement);
+                }
+            } else {
+                if (node.isFirstOnly()) {
+                    int index = target.indexOf((String)search);
+                    if (index < 0) {
+                        return target; // No match found
+                    }
+                    return target.substring(0, index) + replacement + target.substring(index + ((String)search).length());
+                } else {
+                    return target.replace((String)search, replacement);
+                }
+            }
+        } else if (expression instanceof JoinNode) {
+          JoinNode node = (JoinNode) expression;
+          ArrayList list = (ArrayList) resolvePointers(evaluateExpression(node.getValue()));
+          String delimiter = (String) resolvePointers(evaluateExpression(node.getDelimiter()));
+          StringBuilder builder = new StringBuilder();
+          for (int i=0; i<list.size(); i++) {
+              builder.append(list.get(i));
+              if (i< list.size()-1) {
+                  builder.append(delimiter);
+              }
+          }
+          return builder.toString();
         } else if (expression instanceof SubstringNode) {
             Object variable = resolvePointers(evaluateExpression(((SubstringNode) expression).getVariable()));
             Object start = resolvePointers(evaluateExpression(((SubstringNode) expression).getStart()));
@@ -437,7 +513,6 @@ public class Interpreter {
             }
         }
         throw new RuntimeException("Unexpected expression type: " + expression.getClass().getSimpleName());
-
     }
 
 
@@ -515,7 +590,7 @@ public class Interpreter {
     }
     private Object resolvePointers(Object value, boolean recursive) {
         if (value instanceof ArrayList) {
-            ArrayList array = new ArrayList(List.copyOf((ArrayList) value));
+            ArrayList array = new ArrayList(copyOf((ArrayList) value));
             if (recursive) {
                 for (int i = 0; i < array.size(); i++) {
                     array.set(i, resolvePointers(array.get(i)));

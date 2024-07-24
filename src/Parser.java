@@ -62,12 +62,35 @@ public class Parser {
                 return parsePrint();
             case SLEEP:
                 return parseSleep();
+            case ASSERT:
+                return parseAssert();
+            case DELETE:
+                return parseDelete();
+            case COPY:
+                return parseCopy();
             // Handle other statements
             default:
                 throw new RuntimeException("Unexpected token: " + token.getType());
         }
     }
 
+    private INode parseCopy() {
+        consume(TokenType.COPY);
+        INode value = parseExpression();
+        consume(TokenType.TO);
+        INode destination = parseExpression();
+        return new CopyNode(value, destination);
+    }
+    private INode parseDelete() {
+        consume(TokenType.DELETE);
+        INode value = parseExpression();
+        return new DeleteNode(value);
+    }
+    private INode parseAssert() {
+        consume(TokenType.ASSERT);
+        INode value = parseExpression();
+        return new AssertNode(value);
+    }
     private INode parseSleep() {
         consume(TokenType.SLEEP);
         INode value = parseExpression();
@@ -291,6 +314,12 @@ public class Parser {
                 return parseReverseExpression();
             case SUBSTRING:
                 return parseSubstringExpression();
+            case REPLACE:
+                return parseReplaceExpression();
+            case FIND:
+                return parseFindExpression();
+            case JOIN:
+                return parseJoinExpression();
             case NOT:
                 return parseNotExpression();
             case LEFT_PAREN:
@@ -304,6 +333,32 @@ public class Parser {
             default:
                 throw new RuntimeException("Unexpected token in expression: " + token.getType() + " " + token.getValue());
         }
+    }
+
+    private JoinNode parseJoinExpression() {
+        consume(TokenType.JOIN);
+        INode value = parseExpression();
+        consume(TokenType.WITH);
+        INode delimiter = parseExpression();
+        return new JoinNode(value, delimiter);
+    }
+
+    private ReplaceNode parseReplaceExpression() {
+        consume(TokenType.REPLACE);
+        boolean first = match(TokenType.FIRST);
+        INode search = parseExpression();
+        consume(TokenType.WITH);
+        INode replacement = parseExpression();
+        consume(TokenType.IN);
+        INode target = parseExpression();
+        return new ReplaceNode(search, replacement, target, first);
+    }
+    private FindNode parseFindExpression() {
+        consume(TokenType.FIND);
+        INode regex = parseExpression();
+        consume(TokenType.IN);
+        INode value = parseExpression();
+        return new FindNode(regex, value);
     }
 
     private NotNode parseNotExpression() {

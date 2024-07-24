@@ -1,6 +1,7 @@
 package core;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -45,11 +46,16 @@ public class Page {
         return insert(generateInternalName(), object);
     }
 
+    public static <T> List<T> copyOf(List<T> list) {
+        return Collections.unmodifiableList(new ArrayList<>(list));
+    }
+
     public Pointer insert(String name, Object object) {
         // insert the object into the table and return the point to it
         if (object instanceof ArrayList) {
             // recursively search for arrays as elements and convert to pointers
-            ArrayList array = new ArrayList<>(List.copyOf((ArrayList) object));
+            ArrayList array = new ArrayList<>(copyOf((ArrayList) object));
+
             for (int i=0; i<array.size(); i++) {
                 if (array.get(i) instanceof ArrayList) {
                     // insert this into another place in the table

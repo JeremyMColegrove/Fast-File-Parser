@@ -190,6 +190,27 @@ public class Lexer {
             case "BY":
                 addToken(TokenType.BY);
                 break;
+            case "REPLACE":
+                addToken(TokenType.REPLACE);
+                break;
+            case "WITH":
+                addToken(TokenType.WITH);
+                break;
+            case "FIRST":
+                addToken(TokenType.FIRST);
+                break;
+            case "JOIN":
+                addToken(TokenType.JOIN);
+                break;
+            case "ASSERT":
+                addToken(TokenType.ASSERT);
+                break;
+            case "DELETE":
+                addToken(TokenType.DELETE);
+                break;
+            case "COPY":
+                addToken(TokenType.COPY);
+                break;
             case "THEN":
                 addToken(TokenType.THEN);
                 break;
@@ -246,6 +267,9 @@ public class Lexer {
                 break;
             case "LOWERCASE":
                 addToken(TokenType.LOWERCASE);
+                break;
+            case "FIND":
+                addToken(TokenType.FIND);
                 break;
             case "SUBSTRING":
                 addToken(TokenType.SUBSTRING);

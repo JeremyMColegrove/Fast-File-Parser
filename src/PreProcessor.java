@@ -41,11 +41,15 @@ public class PreProcessor {
                 }
             } else {
                 readingDirectives = false;
-                if (!line.isBlank()) {
+                if (!isBlank(line)) {
                     result.append(line + "\n");
                 }
             }
         }
         return result.toString();
+    }
+
+    public static boolean isBlank(String str) {
+        return str == null || str.trim().isEmpty();
     }
 }
