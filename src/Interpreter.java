@@ -1,4 +1,5 @@
 import ast.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.org.apache.xpath.internal.operations.Bool;
 import com.sun.xml.internal.ws.policy.spi.AssertionCreationException;
 import core.Page;
@@ -61,9 +62,32 @@ public class Interpreter {
             executeDeleteStatemenet((DeleteNode)statement);
         } else if (statement instanceof CopyNode) {
             executeCopyStatement((CopyNode) statement);
+        } else if (statement instanceof SendNode) {
+            executeSendStatement((SendNode)statement);
         }else {
             evaluateExpression(statement);
         }
+    }
+
+    private void executeSendStatement(SendNode node) throws IOException {
+        String type = (String)resolvePointers(evaluateExpression(node.getType()));
+        String url = (String)resolvePointers(evaluateExpression(node.getUrl()));
+        String body = null;
+        Map<String, String> json = null;
+        Object response = getVariableNameOrEvaluate(node.getResponse());
+        if (node.getBody() != null) {
+            body = (String)resolvePointers(evaluateExpression(node.getBody()));
+        }
+        if (node.getHeaders() != null) {
+            String headers = (String)resolvePointers(evaluateExpression(node.getHeaders()));
+            // parse JSON headers
+            ObjectMapper mapper = new ObjectMapper();
+            json = mapper.readValue(headers, Map.class);
+        }
+
+        // map headers
+        String result = NetworkRequest.sendRequest(type, url, body, json);
+        setPublicVariable(response, result);
     }
 
     private void executeCopyStatement(CopyNode node) throws IOException {

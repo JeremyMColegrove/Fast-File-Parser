@@ -229,6 +229,27 @@ public class Lexer {
             case "TO":
                 addToken(TokenType.TO);
                 break;
+            case "SEND":
+                addToken(TokenType.SEND);
+                break;
+            case "REQUEST":
+                addToken(TokenType.REQUEST);
+                break;
+            case "GET":
+                addToken(TokenType.GET);
+                break;
+            case "POST":
+                addToken(TokenType.POST);
+                break;
+            case "PUT":
+                addToken(TokenType.PUT);
+                break;
+            case "BODY":
+                addToken(TokenType.BODY);
+                break;
+            case "HEADERS":
+                addToken(TokenType.HEADERS);
+                break;
             case "AS":
                 addToken(TokenType.AS);
                 break;
@@ -313,18 +334,51 @@ public class Lexer {
         StringBuilder lexeme = new StringBuilder();
 
         char quote = code.charAt(position);
-        // Skip opening double quote
+        // Skip opening quote
         position++;
 
         while (position < code.length() && code.charAt(position) != quote) {
-            lexeme.append(code.charAt(position));
+            char currentChar = code.charAt(position);
+
+            // Check for escape character
+            if (currentChar == '\\' && position + 1 < code.length()) {
+                char nextChar = code.charAt(position + 1);
+                // Handle escaped characters
+                switch (nextChar) {
+                    case 'n':
+                        lexeme.append('\n');
+                        position++;
+                        break;
+                    case 't':
+                        lexeme.append('\t');
+                        position++;
+                        break;
+                    case 'r':
+                        lexeme.append('\r');
+                        position++;
+                        break;
+                    case '"':
+                    case '\'':
+                    case '\\':
+                        lexeme.append(nextChar);
+                        position++;
+                        break;
+                    default:
+                        // If it's not an escape sequence, just append the backslash
+                        lexeme.append(currentChar);
+                        break;
+                }
+            } else {
+                lexeme.append(currentChar);
+            }
             position++;
         }
 
-        // Skip closing double quote
+        // Skip closing quote
         position++;
 
-        addToken(TokenType.STRING_LITERAL, lexeme.toString().replace("\\n", "\n"));
+        addToken(TokenType.STRING_LITERAL, lexeme.toString());
     }
+
 
 }

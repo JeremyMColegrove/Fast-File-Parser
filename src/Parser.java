@@ -68,10 +68,32 @@ public class Parser {
                 return parseDelete();
             case COPY:
                 return parseCopy();
+            case SEND:
+                return parseSend();
             // Handle other statements
             default:
                 throw new RuntimeException("Unexpected token: " + token.getType());
         }
+    }
+
+    private INode parseSend() {
+        consume(TokenType.SEND);
+        INode type = parseExpression();
+        consume(TokenType.REQUEST);
+        consume(TokenType.TO);
+        INode url = parseExpression();
+        INode headers = null;
+        INode body = null;
+        while (match(TokenType.WITH)) {
+            if (match(TokenType.HEADERS)) {
+                headers = parseExpression();
+            } else if (match(TokenType.BODY)) {
+                body = parseExpression();
+            }
+        }
+        consume(TokenType.TO);
+        INode response = parseExpression();
+        return new SendNode(type, url, body, headers, response);
     }
 
     private INode parseCopy() {
