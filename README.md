@@ -35,13 +35,6 @@ ffp
 
 ## Keywords
 
-FFP supports the following keywords:
-```textmate
-SET, READ, WRITE, APPEND, FOR, ENDFOR, SPLIT, BY, IF, ENDIF,
-FROM, TO, AS, DO, CONTAINS, MATCHES, REPLACE, PRINT, JOIN,
-TRIM, UPPERCASE, LOWERCASE, SUBSTRING, SORT, LENGTH, THEN, SLEEP,
-IN, EQUALS, NOT, ELSE, COMMA, REVERSE, NUMBER, STRING, ARRAY.
-```
 It is highly recommended to use the official VS Code extension, which provides snippets for all of the commands, so you can learn the syntax.
 
 ## Comments
@@ -132,7 +125,6 @@ PRINT line
 ENDFOR
 ```
 
-
 #### Range
 
 To iterate over a range of numbers:
@@ -183,3 +175,11 @@ Example:
 ```textmate
 SET message TO "Hello, world!"
 ```
+
+### SEND
+You can send requests through the network to urls through the SEND command, and provide optional BODY and HEADERS arguments like this:
+```textmate
+SEND GET REQUEST TO "http://www.myurl.com" WITH BODY "My body!" WITH HEADERS "{\"Authorization\":\"myAuthorizatonKey\"}" TO response
+```
+
+The response of the request is stored in the `response` variable.
