@@ -1,0 +1,54 @@
+FFP Programming Language
+Usage: ffp <file.ffp>
+Keywords:
+  SET, READ, WRITE, APPEND, FOR, ENDFOR, SPLIT, BY, IF, ENDIF,
+  FROM, TO, AS, DO, CONTAINS, MATCHES, REPLACE, PRINT, JOIN,
+  TRIM, UPPERCASE, LOWERCASE, SUBSTRING, SORT, LENGTH, THEN,
+  IN, EQUALS, NOT, ELSE, COMMA, REVERSE, NUMBER, STRING, ARRAY.
+
+Structure:
+  COMMENT:
+    # This is a comment
+
+  IF/ELSE:
+    IF condition THEN
+      # code
+    ELSE
+      # code
+    ENDIF
+
+  FOR (iteration):
+    FOR x IN y DO
+      # code
+    ENDFOR
+
+  FOR (range):
+    FOR i FROM 0 TO 10 DO
+      # code
+    ENDFOR
+
+  SPLIT:
+    SPLIT variable BY delimiter TO newVariable
+
+  SUBSTRING:
+    SUBSTRING "Hello, World!" FROM 0 TO 5 # (=>"Hello")
+    SUBSTRING [1, 2, 3, 4, 5] FROM 2 TO 4 # (=>[3, 4])
+
+  SET:
+    SET variable TO value
+
+  WRITE:
+    WRITE str TO file
+
+  READ:
+    READ filename TO variable
+
+  APPEND:
+    APPEND string TO file
+
+  CAST:
+    number AS STRING # (10 => "10")
+    string AS NUMBER # ("10" => 10)
+    string AS ARRAY #  ("10" => ["1", "0"])
+    array AS STRING #  (["1", "0"] => "10")
+

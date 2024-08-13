@@ -1,0 +1,72 @@
+{
+  "name": "ffp",
+  "displayName": "FFP Syntax and Tools",
+  "description": "Provides syntax highlighting, code snippets, and run button for the Fast File Parser (FFP) language, enhancing efficiency in file processing and parsing.",
+  "version": "0.2.0",
+  "icon": "icon.ico",
+  "publisher": "jeremy-colegrove",
+  "author": {"name": "JeremyMColegrove", "url": "https://www.jeremycolegrove.me", "email": "jeremycolegrove2012@gmail.com"},
+  "repository": {"url": "https://github.com/JeremyMColegrove/FFP-VSCode-Extension", "type": "github"},
+  "engines": {
+    "vscode": "^1.91.0"
+  },
+  
+  "categories": [
+    "Language Packs",
+    "Programming Languages",
+    "Snippets"
+  ],
+  "activationEvents": [
+    "onCommand:ffp-runner.runFfpFile",
+    "workspaceContains:**/*.ffp"
+],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "languages": [{
+      "id": "ffp",
+      "aliases": ["FFP", "ffp", "Fast File Parser"],
+      "extensions": [".ffp"],
+      "configuration": "./language-configuration.json",
+      "icon": {
+        "dark": "resources/icon.ico",
+        "light": "resources/icon.ico"
+      }
+    }],
+    "snippets": [
+      {
+        "language": "ffp",
+        "path": "./snippets.json"
+      }
+    ],
+    "grammars": [{
+      "language": "ffp",
+      "scopeName": "source.ffp",
+      "path": "./syntaxes/ffp.tmLanguage.json"
+    }]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.91.0",
+    "@types/mocha": "^10.0.7",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^7.14.1",
+    "@typescript-eslint/parser": "^7.11.0",
+    "eslint": "^8.57.0",
+    "typescript": "^5.4.5",
+    "ts-loader": "^9.5.1",
+    "webpack": "^5.92.1",
+    "webpack-cli": "^5.1.4",
+    "@vscode/test-cli": "^0.0.9",
+    "@vscode/test-electron": "^2.4.0"
+  }
+}

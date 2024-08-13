@@ -1,0 +1,65 @@
+{
+    "scopeName": "source.ffp",
+    
+    "patterns": [
+        {
+            "name": "keyword.ffp",
+            "match": "\\b(?i:READ|GET|POST|PUT|BODY|HEADERS|SEND|REQUEST|DELETE|COPY|ASSERT|JOIN|REPLACE|FIRST|WITH|FIND|SLEEP|SET|ELSE|IN|WRITE|REVERSE|NOT|AS|STRING|NUMBER|ARRAY|APPEND|FOR|ENDFOR|SPLIT|THEN|BY|TO|IF|ENDIF|FROM|DO|MATCHES|PRINT|TRIM|UPPERCASE|LOWERCASE|SUBSTRING|SORT|LENGTH|EQUALS)\\b"
+        },
+        {
+            "name": "support.class.ffp",
+            "match": "\\S*@.*"
+        },
+        {
+            "name": "string.ffp",
+            "begin": "\"",
+            "end": "\"",
+            "patterns": [
+                {
+                    "name": "constant.character.escape.ffp",
+                    "match": "\\\\[\"'\\\\nrt]"
+                }
+            ]
+        },
+        {
+            "name": "string.ffp",
+            "begin": "'",
+            "end": "'",
+            "patterns": [
+                {
+                    "name": "constant.character.escape.ffp",
+                    "match": "\\\\[\"'\\\\nrt]"
+                }
+            ]
+        },
+        {
+            "name": "comment.line.ffp",
+            "begin": "#",
+            "end": "\n"
+        },
+        {
+            "name": "constant.numeric.ffp",
+            "match": "\\b-?[0-9]+\\b"
+        },
+        {
+            "name": "variable.other.ffp",
+            "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+        },
+        {
+            "name": "keyword.operator.ffp",
+            "match": "\\+|\\-|\\*|\\^|\\(|\\)|\\[|\\]|=|<|>|\\/\\/"
+        },
+        {
+            "name": "string.regexp.ffp",
+            "begin": "(?<!\\S)/",
+            "end": "/(?!\\S)",
+            "patterns": [
+                {
+                    "name": "escape.ffp",
+                    "match": "\\\\."
+                }
+            ]
+        }
+    ],
+    "repository": {}
+}

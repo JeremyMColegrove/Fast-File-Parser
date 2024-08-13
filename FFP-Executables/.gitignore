@@ -1,0 +1,4 @@
+Windows/.vs/**/*
+Windows/obj/**/*
+Windows/.vs/FFP/v17/DocumentLayout.json
+Windows/obj/FFP.csproj.nuget.dgspec.json
