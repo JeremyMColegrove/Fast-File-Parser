@@ -1,1 +1,0 @@
-PRINT SUBSTRING "Hello, World!" FROM 1 TO 5
