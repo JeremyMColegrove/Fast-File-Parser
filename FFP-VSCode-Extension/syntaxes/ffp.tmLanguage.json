@@ -8,7 +8,7 @@
         },
         {
             "name": "support.class.ffp",
-            "match": "\\S*@.*"
+            "match": "\\S*@[^ ]*"
         },
         {
             "name": "string.ffp",

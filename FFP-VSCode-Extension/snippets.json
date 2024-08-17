@@ -102,6 +102,10 @@
         "prefix": "@autonewline",
         "body":["@AUTONEWLINE"]
     },
+    "Timeout Directive": {
+        "prefix": "@timeout",
+        "body":["@TIMEOUT 1000$1"]
+    },
     "Sleep": {
         "prefix": "sleep",
         "body":["SLEEP $1"]

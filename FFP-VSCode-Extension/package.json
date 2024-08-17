@@ -2,7 +2,7 @@
   "name": "ffp",
   "displayName": "FFP Syntax and Tools",
   "description": "Provides syntax highlighting, code snippets, and run button for the Fast File Parser (FFP) language, enhancing efficiency in file processing and parsing.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "icon": "icon.ico",
   "publisher": "jeremy-colegrove",
   "author": {"name": "JeremyMColegrove", "url": "https://www.jeremycolegrove.me", "email": "jeremycolegrove2012@gmail.com"},
