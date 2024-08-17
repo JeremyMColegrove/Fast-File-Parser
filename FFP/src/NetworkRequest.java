@@ -19,6 +19,7 @@ public class NetworkRequest {
 
         if (body != null && (method.equals("POST") || method.equals("PUT"))) {
             connection.setDoOutput(true);
+            connection.setRequestProperty("Content-Type", "text/plain; charset=utf-8");
             try (OutputStream os = connection.getOutputStream()) {
                 byte[] input = body.getBytes("utf-8");
                 os.write(input, 0, input.length);
